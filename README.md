@@ -44,7 +44,7 @@ It will use the following REST API:
 * `DELETE /file/<path>`  
   Delete the file on the specified path.
 
-* `POST /synchronize`
+* `POST /synchronize`  
   Instruct the storage server to download/update certain files from other storage servers.
 
   Sample request:
