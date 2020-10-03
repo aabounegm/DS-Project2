@@ -149,6 +149,14 @@ The REST API of the naming server will be identical to the REST API of the stora
   }
   ```
 
+  Upon registering the storage server, the naming server adds an entry to a MongoDB collection `servers` with the address of the server and the amount of free space on the storage server in bytes. Sample document:
+  ```json
+  {
+    "_id": "127.0.0.1",
+    "free_space": 1024
+  }
+  ```
+
 
 ### Storage server discovery
 
