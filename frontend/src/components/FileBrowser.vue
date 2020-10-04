@@ -1,63 +1,63 @@
 <template>
-    <v-card class="mx-auto" :loading="loading > 0">
-        <toolbar
-            :path="path"
-            :storages="storagesArray"
-            :storage="activeStorage"
-            :endpoints="endpoints"
-            :axios="axiosInstance"
-            v-on:storage-changed="storageChanged"
-            v-on:path-changed="pathChanged"
-            v-on:add-files="addUploadingFiles"
-            v-on:folder-created="refreshPending = true"
-        ></toolbar>
-        <v-row no-gutters>
-            <v-col v-if="tree && $vuetify.breakpoint.smAndUp" sm="auto">
-                <tree
-                    :path="path"
-                    :storage="activeStorage"
-                    :icons="icons"
-                    :endpoints="endpoints"
-                    :axios="axiosInstance"
-                    :refreshPending="refreshPending"
-                    v-on:path-changed="pathChanged"
-                    v-on:loading="loadingChanged"
-                    v-on:refreshed="refreshPending = false"
-                ></tree>
-            </v-col>
-            <v-divider v-if="tree" vertical></v-divider>
-            <v-col>
-                <list
-                    :path="path"
-                    :storage="activeStorage"
-                    :icons="icons"
-                    :endpoints="endpoints"
-                    :axios="axiosInstance"
-                    :refreshPending="refreshPending"
-                    v-on:path-changed="pathChanged"
-                    v-on:loading="loadingChanged"
-                    v-on:refreshed="refreshPending = false"
-                    v-on:file-deleted="refreshPending = true"
-                ></list>
-            </v-col>
-        </v-row>
-        <upload
-            v-if="uploadingFiles !== false"
-            :path="path"
-            :storage="activeStorage"
-            :files="uploadingFiles"
-            :icons="icons"
-            :axios="axiosInstance"
-            :endpoint="endpoints.upload"
-            :maxUploadFilesCount="maxUploadFilesCount"
-            :maxUploadFileSize="maxUploadFileSize"
-            v-on:add-files="addUploadingFiles"
-            v-on:remove-file="removeUploadingFile"
-            v-on:clear-files="uploadingFiles = []"
-            v-on:cancel="uploadingFiles = false"
-            v-on:uploaded="uploaded"
-        ></upload>
-    </v-card>
+  <v-card class="mx-auto" :loading="loading > 0">
+    <Toolbar
+      :path="path"
+      :storages="storagesArray"
+      :storage="activeStorage"
+      :endpoints="endpoints"
+      :axios="axiosInstance"
+      @storage-changed="storageChanged"
+      @path-changed="pathChanged"
+      @add-files="addUploadingFiles"
+      @folder-created="refreshPending = true"
+    />
+    <v-row no-gutters>
+      <v-col v-if="tree && $vuetify.breakpoint.smAndUp" sm="auto">
+        <Tree
+          :path="path"
+          :storage="activeStorage"
+          :icons="icons"
+          :endpoints="endpoints"
+          :axios="axiosInstance"
+          :refreshPending="refreshPending"
+          @path-changed="pathChanged"
+          @loading="loadingChanged"
+          @refreshed="refreshPending = false"
+        />
+      </v-col>
+      <v-divider v-if="tree" vertical></v-divider>
+      <v-col>
+        <List
+          :path="path"
+          :storage="activeStorage"
+          :icons="icons"
+          :endpoints="endpoints"
+          :axios="axiosInstance"
+          :refreshPending="refreshPending"
+          @path-changed="pathChanged"
+          @loading="loadingChanged"
+          @refreshed="refreshPending = false"
+          @file-deleted="refreshPending = true"
+        />
+      </v-col>
+    </v-row>
+    <Upload
+      v-if="uploadingFiles !== false"
+      :path="path"
+      :storage="activeStorage"
+      :files="uploadingFiles"
+      :icons="icons"
+      :axios="axiosInstance"
+      :endpoint="endpoints.upload"
+      :maxUploadFilesCount="maxUploadFilesCount"
+      :maxUploadFileSize="maxUploadFileSize"
+      @add-files="addUploadingFiles"
+      @remove-file="removeUploadingFile"
+      @clear-files="uploadingFiles = []"
+      @cancel="uploadingFiles = false"
+      @uploaded="uploaded"
+    />
+  </v-card>
 </template>
 
 <script>
@@ -74,16 +74,11 @@ const availableStorages = [
     code: 'local',
     icon: 'mdi-folder-multiple-outline',
   },
-  {
-    name: 'Amazon S3',
-    code: 's3',
-    icon: 'mdi-amazon-drive',
-  },
   /* {
-        name: "Dropbox",
-        code: "dropbox",
-        icon: "mdi-dropbox"
-    } */
+    name: "Dropbox",
+    code: "dropbox",
+    icon: "mdi-dropbox"
+  } */
 ];
 
 const endpoints = {
@@ -127,7 +122,7 @@ export default {
     event: 'change',
   },
   props: {
-    // comma-separated list of active storage codes
+  // comma-separated list of active storage codes
     storages: {
       type: String,
       default: () => availableStorages.map(item => item.code).join(','),
@@ -151,7 +146,7 @@ export default {
   },
   data () {
     return {
-      loading: 0,
+      loading: false,
       path: '',
       activeStorage: null,
       uploadingFiles: false, // or an Array of files
@@ -171,11 +166,7 @@ export default {
   },
   methods: {
     loadingChanged (loading) {
-      if (loading) {
-        this.loading++;
-      } else if (this.loading > 0) {
-        this.loading--;
-      }
+      this.loading = loading;
     },
     storageChanged (storage) {
       this.activeStorage = storage;
@@ -213,7 +204,7 @@ export default {
   },
   created () {
     this.activeStorage = this.storage;
-    // this.axiosInstance = this.axios || axios.create(this.axiosConfig);
+  // this.axiosInstance = this.axios || axios.create(this.axiosConfig);
   },
   mounted () {
     if (!this.path && !(this.tree && this.$vuetify.breakpoint.smAndUp)) {

@@ -18,7 +18,8 @@
   </v-dialog>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue';
 /**
  * Vuetify Confirm Dialog component
  * https://gist.github.com/eolant/ba0f8a5c9135d1a146e1db575276177d
@@ -36,20 +37,20 @@
  *   // cancel
  * }
  */
-export default {
+export default Vue.extend({
   data: () => ({
     dialog: false,
-    resolve: null,
-    reject: null,
-    message: null,
-    title: null,
+    resolve: null as Function|null,
+    reject: null as Function|null,
+    message: '',
+    title: '',
     options: {
       color: 'error',
       width: 300,
     },
   }),
   methods: {
-    open (title, message, options) {
+    open (title: string, message: string, options?: Record<string, any>) {
       this.dialog = true;
       this.title = title;
       this.message = message;
@@ -60,13 +61,13 @@ export default {
       });
     },
     agree () {
-      this.resolve(true);
+      this.resolve!(true);
       this.dialog = false;
     },
     cancel () {
-      this.resolve(false);
+      this.resolve!(false);
       this.dialog = false;
     },
   },
-};
+});
 </script>
