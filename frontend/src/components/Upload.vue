@@ -14,22 +14,22 @@
           <span class="grey--text">Max file size: {{ formatBytes(maxUploadFileSize) }}</span>
         </div>
       </v-card-text>
-      <v-divider></v-divider>
+      <v-divider />
       <v-card-text v-if="listItems.length" class="pa-0 files-list-wrapper">
         <v-list two-line v-if="listItems.length">
-          <v-list-item v-for="(file, index) in listItems" :key="index" link>
+          <v-list-item v-for="(file, index) in listItems" :key="index">
             <v-list-item-avatar>
-              <v-img v-if="file.preview" :src="file.preview"></v-img>
+              <v-img v-if="file.preview" :src="file.preview" />
               <v-icon
                 v-else
                 v-text="icons[file.extension] || 'mdi-file'"
                 class="mdi-36px"
                 color="grey lighten-1"
-              ></v-icon>
+              />
             </v-list-item-avatar>
             <v-list-item-content>
-              <v-list-item-title v-text="file.name"></v-list-item-title>
-              <v-list-item-subtitle>{{ formatBytes(file.size) }} - {{ file.type }}</v-list-item-subtitle>
+              <v-list-item-title v-text="file.name" />
+              <v-list-item-subtitle>{{ formatBytes(file.size) }} &mdash; {{ file.type }}</v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-action>
               <v-btn icon @click="remove(index)">
@@ -41,16 +41,14 @@
       </v-card-text>
       <v-card-text v-else class="py-6 text-center">
         <v-btn @click="$refs.inputUpload.click()">
-          <v-icon left>mdi-plus-circle</v-icon>Add files
+          <v-icon left>mdi-plus-circle</v-icon>
+          Add files
         </v-btn>
       </v-card-text>
-      <v-divider></v-divider>
+      <v-divider />
       <v-toolbar dense flat>
         <div class="grow"></div>
         <v-btn text @click="cancel" class="mx-1">Cancel</v-btn>
-        <v-btn depressed color="warning" @click="clear" class="mx-1" :disabled="!files">
-          <v-icon>mdi-close</v-icon>Clear
-        </v-btn>
         <v-btn
           :disabled="listItems.length >= maxUploadFilesCount"
           depressed
@@ -58,7 +56,8 @@
           @click="$refs.inputUpload.click()"
           class="mx-1"
         >
-          <v-icon left>mdi-plus-circle</v-icon>Add Files
+          <v-icon left>mdi-plus-circle</v-icon>
+          Add Files
           <input
             v-show="false"
             ref="inputUpload"
@@ -67,15 +66,13 @@
             @change="add"
           />
         </v-btn>
-        <v-btn depressed color="success" @click="upload" class="ml-1" :disabled="!files">
+        <v-btn depressed color="success" @click="upload" class="ml-1" :disabled="!files || loading">
           Upload
           <v-icon right>mdi-upload-outline</v-icon>
         </v-btn>
       </v-toolbar>
       <v-overlay :value="uploading" :absolute="true" color="white" opacity="0.9">
-        <v-progress-linear v-model="progress" height="25" striped rounded reactive>
-          <strong>{{ Math.ceil(progress) }}%</strong>
-        </v-progress-linear>
+        <v-progress-linear v-model="loading" indeterminate height="25" striped rounded reactive />
       </v-overlay>
     </v-card>
   </v-overlay>
@@ -83,7 +80,7 @@
 
 <script lang="ts">
 import formatBytes from '@/utils/formatBytes';
-import { Endpoint, Icons, MyFile } from './types';
+import { Icons, MyFile } from '@/types';
 import Vue, { PropType } from 'vue';
 
 const imageMimeTypes = ['image/png', 'image/jpeg'];
@@ -96,8 +93,8 @@ export default Vue.extend({
     storage: {
       type: String,
     },
-    endpoint: {
-      type: Object as PropType<Endpoint>,
+    baseUrl: {
+      type: String,
     },
     files: {
       type: Array as PropType<File[]>,
@@ -106,16 +103,13 @@ export default Vue.extend({
     icons: {
       type: Object as PropType<Icons>,
     },
-    axios: {
-      type: Function,
-    },
     maxUploadFilesCount: {
       type: Number,
-      default: 0,
+      default: Infinity,
     },
     maxUploadFileSize: {
       type: Number,
-      default: 0,
+      default: Infinity,
     },
   },
   data () {
@@ -128,7 +122,6 @@ export default Vue.extend({
   },
   methods: {
     formatBytes,
-
     async filesMap (files: File[]) {
       const promises: Promise<MyFile>[] = Array.from(files).map(file => {
         const result: MyFile = {
@@ -144,7 +137,10 @@ export default Vue.extend({
           }
           const reader = new FileReader();
           reader.onload = function (e) {
-            result.preview = e.target!.result as string;
+            if (e.target == null) {
+              return;
+            }
+            result.preview = e.target.result as string;
             resolve(result);
           };
           reader.readAsDataURL(file);
@@ -154,8 +150,14 @@ export default Vue.extend({
       return await Promise.all(promises);
     },
     async add (event: InputEvent) {
-      const input = event.target! as HTMLInputElement;
-      const files = Array.from(input.files!);
+      if (event.target == null) {
+        return;
+      }
+      const input = event.target as HTMLInputElement;
+      if (input.files == null) {
+        return;
+      }
+      const files = Array.from(input.files);
       this.$emit('add-files', files);
       (this.$refs.inputUpload as HTMLInputElement).value = '';
     },
@@ -163,33 +165,26 @@ export default Vue.extend({
       this.$emit('remove-file', index);
       this.listItems.splice(index, 1);
     },
-
-    clear () {
-      this.$emit('clear-files');
-      this.listItems = [];
-    },
-
     cancel () {
       this.$emit('cancel');
+      this.listItems = [];
     },
-
     async upload () {
       const formData = new FormData();
 
-      // files
       for (const file of this.files) {
         formData.append('files', file, file.name);
       }
 
-      const url = this.endpoint.url
-        .replace(new RegExp('{storage}', 'g'), this.storage)
-        .replace(new RegExp('{path}', 'g'), this.path);
+      const url = `${this.baseUrl}/file/${this.path}`;
 
       this.uploading = true;
+
       const _response = await fetch(url, {
-        method: this.endpoint.method || 'post',
+        method: 'post',
         body: formData,
       });
+
       this.uploading = false;
       this.$emit('uploaded');
     },

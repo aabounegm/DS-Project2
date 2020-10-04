@@ -2,7 +2,7 @@
   <v-toolbar flat dense color="blue-grey lighten-5">
     <v-toolbar-items>
       <v-menu offset-y v-if="storages.length > 1">
-        <template v-slot:activator="{ on }">
+        <template #activator="{ on }">
           <v-btn icon class="storage-select-button mr-3" v-on="on">
             <v-icon>mdi-arrow-down-drop-circle-outline</v-icon>
           </v-btn>
@@ -11,19 +11,19 @@
           <v-list-item
             v-for="(item, index) in storages"
             :key="index"
-            :disabled="item.code === storageObject.code"
-            @click="changeStorage(item.code)"
+            :disabled="item.url === currentStorage.url"
+            @click="changeStorage(item.url)"
           >
             <v-list-item-icon>
-              <v-icon v-text="item.icon"></v-icon>
+              <v-icon v-text="item.icon" />
             </v-list-item-icon>
-            <v-list-item-title>{{ item.name }}</v-list-item-title>
+            <v-list-item-title v-text="item.name" />
           </v-list-item>
         </v-list>
       </v-menu>
       <v-btn text :input-value="path === '/'" @click="changePath('/')">
-        <v-icon class="mr-2">{{storageObject.icon}}</v-icon>
-        {{storageObject.name}}
+        <v-icon class="mr-2">{{currentStorage.icon}}</v-icon>
+        {{currentStorage.name}}
       </v-btn>
       <template v-for="(segment, index) in pathSegments">
         <v-icon :key="index + '-icon'">mdi-chevron-right</v-icon>
@@ -39,7 +39,7 @@
 
     <template v-if="$vuetify.breakpoint.smAndUp">
       <v-tooltip bottom v-if="pathSegments.length > 0">
-        <template v-slot:activator="{ on }">
+        <template #activator="{ on }">
           <v-btn icon @click="goUp" v-on="on">
             <v-icon>mdi-arrow-up-bold-outline</v-icon>
           </v-btn>
@@ -53,14 +53,14 @@
         :nudge-width="200"
         offset-y
       >
-        <template v-slot:activator="{ on }">
+        <template #activator="{ on }">
           <v-btn v-if="path" icon v-on="on" title="Create Folder">
             <v-icon>mdi-folder-plus-outline</v-icon>
           </v-btn>
         </template>
         <v-card>
           <v-card-text>
-            <v-text-field label="Name" v-model="newFolderName" hide-details></v-text-field>
+            <v-text-field label="Name" v-model="newFolderName" hide-details />
           </v-card-text>
           <v-card-actions>
             <div class="flex-grow-1"></div>
@@ -74,31 +74,33 @@
           </v-card-actions>
         </v-card>
       </v-menu>
-      <v-btn v-if="path" icon @click="$refs.inputUpload.click()" title="Upload Files">
-        <v-icon>mdi-plus-circle</v-icon>
-        <input v-show="false" ref="inputUpload" type="file" multiple @change="addFiles" />
-      </v-btn>
+      <v-tooltip bottom v-if="path">
+        <template #activator="{ on }">
+          <v-btn v-on="on" icon @click="$refs.inputUpload.click()">
+            <v-icon>mdi-plus-circle</v-icon>
+            <input v-show="false" ref="inputUpload" type="file" multiple @change="addFiles" />
+          </v-btn>
+        </template>
+        <span>Upload files</span>
+      </v-tooltip>
     </template>
   </v-toolbar>
 </template>
 
 <script lang="ts">
 import Vue, { PropType } from 'vue';
-import { Endpoints, Storage } from './types';
+import { Remote } from '@/types';
 
 export default Vue.extend({
   props: {
     storages: {
-      type: Array as PropType<Storage[]>,
+      type: Array as PropType<Remote[]>,
     },
-    storage: {
+    baseUrl: {
       type: String,
     },
     path: {
       type: String,
-    },
-    endpoints: {
-      type: Object as PropType<Endpoints>,
     },
   },
   data () {
@@ -125,16 +127,19 @@ export default Vue.extend({
 
       return segmentsDetailed;
     },
-    storageObject () {
-      return this.storages.find(item => item.code === this.storage);
+    currentStorage () {
+      return this.storages.find(item => item.url === this.baseUrl);
     },
   },
   methods: {
-    changeStorage (code: string) {
-      if (this.storage !== code) {
-        this.$emit('storage-changed', code);
-        this.$emit('path-changed', '');
-      }
+    changeStorage (url: string) {
+      if (this.baseUrl === url) { return; }
+
+      const storage = this.storages.find(s => s.url === url);
+      if (storage == null) { return; }
+
+      this.$emit('storage-changed', storage);
+      this.$emit('path-changed', '');
     },
     changePath (path: string) {
       this.$emit('path-changed', path);
@@ -148,20 +153,24 @@ export default Vue.extend({
       this.changePath(path);
     },
     async addFiles (event: InputEvent) {
-      const input = event.target! as HTMLInputElement;
+      if (event.target == null) {
+        return;
+      }
+      const input = event.target as HTMLInputElement;
       this.$emit('add-files', input.files);
       (this.$refs.inputUpload as HTMLInputElement).value = '';
     },
     async mkdir () {
       this.$emit('loading', true);
-      const url = this.endpoints.mkdir.url
-        .replace(new RegExp('{storage}', 'g'), this.storage)
-        .replace(new RegExp('{path}', 'g'), this.path + this.newFolderName);
+
+      const url = `${this.baseUrl}/dir/${this.path}/${this.newFolderName}`;
 
       await fetch(url, {
-        method: this.endpoints.mkdir.method || 'post',
+        method: 'post',
       });
+
       this.$emit('folder-created', this.newFolderName);
+
       this.newFolderPopper = false;
       this.newFolderName = '';
       this.$emit('loading', false);

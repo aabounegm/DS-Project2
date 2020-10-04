@@ -50,7 +50,7 @@ export default Vue.extend({
     },
   }),
   methods: {
-    open (title: string, message: string, options?: Record<string, any>) {
+    open (title: string, message: string, options?: Record<string, string|number>) {
       this.dialog = true;
       this.title = title;
       this.message = message;
@@ -61,11 +61,17 @@ export default Vue.extend({
       });
     },
     agree () {
-      this.resolve!(true);
+      if (this.resolve == null) {
+        return;
+      }
+      this.resolve(true);
       this.dialog = false;
     },
     cancel () {
-      this.resolve!(false);
+      if (this.resolve == null) {
+        return;
+      }
+      this.resolve(false);
       this.dialog = false;
     },
   },

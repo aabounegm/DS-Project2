@@ -9,7 +9,7 @@
         :load-children="readFolder"
         @update:active="activeChanged"
         item-key="path"
-        item-text="basename"
+        item-text="name"
         dense
         activatable
         transition
@@ -19,10 +19,10 @@
           <v-icon
             v-if="item.type === 'dir'"
           >{{ open ? 'mdi-folder-open-outline' : 'mdi-folder-outline' }}</v-icon>
-          <v-icon v-else>{{ icons[item.extension.toLowerCase()] || icons['other'] }}</v-icon>
+          <v-icon v-else>{{ icons[item.extension] || icons['other'] }}</v-icon>
         </template>
         <template v-slot:label="{ item }">
-          {{item.basename}}
+          {{item.name}}
           <v-btn
             icon
             v-if="item.type === 'dir'"
@@ -59,21 +59,18 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue';
-import { Endpoints, Icons } from './types';
+import { TreeItem, Icons } from '@/types';
 
 export default Vue.extend({
   props: {
     icons: {
       type: Object as PropType<Icons>,
     },
-    storage: {
-      type: String,
-    },
     path: {
       type: String,
     },
-    endpoints: {
-      type: Object as PropType<Endpoints>,
+    baseUrl: {
+      type: String,
     },
     refreshPending: {
       type: Boolean,
@@ -83,7 +80,7 @@ export default Vue.extend({
     return {
       open: [] as string[],
       active: [] as string[],
-      items: [] as any[],
+      items: [] as TreeItem[],
       filter: '',
     };
   },
@@ -93,36 +90,32 @@ export default Vue.extend({
       this.items = [];
       // set default files tree items (root item) in nextTick.
       // Otherwise this.open isn't cleared properly (due to syncing perhaps)
-      setTimeout(() => {
-        this.items = [
-          {
-            type: 'dir',
-            path: '/',
-            basename: 'root',
-            extension: '',
-            name: 'root',
-            children: [],
-          },
-        ];
-      }, 0);
+      Vue.nextTick().then(() => {
+        this.items = [{
+          is_directory: true,
+          name: 'root',
+          path: '/',
+          children: [],
+        }];
+      });
       if (this.path !== '') {
         this.$emit('path-changed', '');
       }
     },
-    async readFolder (item: any) {
+    async readFolder (item: TreeItem) {
+      if (!item.is_directory) {
+        return;
+      }
       this.$emit('loading', true);
-      const url = this.endpoints.list.url
-        .replace(new RegExp('{storage}', 'g'), this.storage)
-        .replace(new RegExp('{path}', 'g'), item.path);
 
-      const response = await fetch(url, {
-        method: this.endpoints.list.method || 'get',
-      });
+      const url = `${this.baseUrl}/dir/${item.path}`;
 
-      const data: any[] = await response.json();
+      const response = await fetch(url);
+
+      const data: TreeItem[] = await response.json();
 
       item.children = data.map(item => {
-        if (item.type === 'dir') {
+        if (item.is_directory) {
           item.children = [];
         }
         return item;
@@ -133,7 +126,7 @@ export default Vue.extend({
     activeChanged (active: string[]) {
       this.active = active;
       let path = '';
-      if (active.length) {
+      if (active.length > 0) {
         path = active[0];
       }
       if (this.path !== path) {
@@ -141,13 +134,16 @@ export default Vue.extend({
       }
     },
     findItem (path: string) {
-      const stack = [];
+      const stack: TreeItem[] = [];
       stack.push(this.items[0]);
       while (stack.length > 0) {
         const node = stack.pop();
+        if (node == null) {
+          break;
+        }
         if (node.path === path) {
           return node;
-        } else if (node.children && node.children.length) {
+        } else if (node.is_directory && node.children?.length > 0) {
           for (let i = 0; i < node.children.length; i++) {
             stack.push(node.children[i]);
           }
@@ -157,7 +153,7 @@ export default Vue.extend({
     },
   },
   watch: {
-    storage () {
+    baseUrl () {
       this.init();
     },
     path () {
@@ -166,12 +162,16 @@ export default Vue.extend({
         this.open.push(this.path);
       }
     },
-    async refreshPending () {
-      if (this.refreshPending) {
-        const item = this.findItem(this.path);
-        await this.readFolder(item);
-        this.$emit('refreshed');
+    async refreshPending (newValue: boolean, _oldValue: boolean) {
+      if (!newValue) {
+        return;
       }
+      const item = this.findItem(this.path);
+      if (!item?.is_directory) {
+        return;
+      }
+      await this.readFolder(item);
+      this.$emit('refreshed');
     },
   },
   created () {

@@ -44,7 +44,7 @@
           class="pl-0"
         >
           <v-list-item-avatar class="ma-0">
-            <v-icon>{{ icons[item.extension.toLowerCase()] || icons['other'] }}</v-icon>
+            <v-icon>{{ icons[item.extension] || icons['other'] }}</v-icon>
           </v-list-item-avatar>
 
           <v-list-item-content class="py-2">
@@ -101,28 +101,19 @@
 import formatBytes from '@/utils/formatBytes';
 import Confirm from './Confirm.vue';
 import Vue, { PropType } from 'vue';
-import { Endpoint, Item, Icons } from './types';
+import { Item, Icons } from '@/types';
 
 export default Vue.extend({
   props: {
     icons: {
       type: Object as PropType<Icons>,
     },
-    storage: {
+    baseUrl: {
       type: String,
     },
     path: {
       type: String,
     },
-    endpoints: {
-      type: Object as PropType<{
-        list: Endpoint;
-        upload: Endpoint;
-        mkdir: Endpoint;
-        delete: Endpoint;
-      }>,
-    },
-    axios: Function,
     refreshPending: Boolean,
   },
   components: {
@@ -137,13 +128,13 @@ export default Vue.extend({
   computed: {
     dirs (): Item[] {
       return this.items.filter(
-        item => item.type === 'dir' && item.basename.includes(this.filter),
+        item => item.type === 'dir' && item.name.includes(this.filter),
       );
     },
     files (): Item[] {
       return this.items.filter(
         item =>
-          item.type === 'file' && item.basename.includes(this.filter),
+          item.type === 'file' && item.name.includes(this.filter),
       );
     },
     isDir (): boolean {
@@ -161,13 +152,9 @@ export default Vue.extend({
     async load () {
       this.$emit('loading', true);
       if (this.isDir) {
-        const url = this.endpoints.list.url
-          .replace(new RegExp('{storage}', 'g'), this.storage)
-          .replace(new RegExp('{path}', 'g'), this.path);
+        const url = `${this.baseUrl}/dir/${this.path}`;
 
-        const response = await fetch(url, {
-          method: this.endpoints.list.method || 'get',
-        });
+        const response = await fetch(url);
         const data = await response.json();
         this.items = data;
       } else {
@@ -180,19 +167,17 @@ export default Vue.extend({
       const confirmed = await dialog.open('Delete',
         `Are you sure<br>you want to delete this ${
           item.type === 'dir' ? 'folder' : 'file'
-        }?<br><em>${item.basename}</em>`,
+        }?<br><em>${item.name}</em>`,
       );
 
       if (!confirmed) {
         return;
       }
       this.$emit('loading', true);
-      const url = this.endpoints.delete.url
-        .replace(new RegExp('{storage}', 'g'), this.storage)
-        .replace(new RegExp('{path}', 'g'), item.path);
+      const url = `${this.baseUrl}/file/${item.path}`;
 
       await fetch(url, {
-        method: this.endpoints.delete.method || 'post',
+        method: 'delete',
       });
 
       this.$emit('file-deleted');

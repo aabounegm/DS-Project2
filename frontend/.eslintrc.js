@@ -19,6 +19,7 @@ module.exports = {
     'quotes': ['error', 'single'],
     'indent': ['error', 2],
     '@typescript-eslint/no-empty-function': 'off',
-    '@typescript-eslint/no-unused-vars': ['error', { 'varsIgnorePattern': '^_' }]
+    '@typescript-eslint/no-unused-vars': ['error', { 'varsIgnorePattern': '^_', 'argsIgnorePattern': '^_' }],
+    '@typescript-eslint/camelcase': 'off',
   },
 };

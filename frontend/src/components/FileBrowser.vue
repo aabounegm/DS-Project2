@@ -2,91 +2,62 @@
   <v-card class="mx-auto" :loading="loading > 0">
     <Toolbar
       :path="path"
-      :storages="storagesArray"
-      :storage="activeStorage"
-      :endpoints="endpoints"
-      :axios="axiosInstance"
-      @storage-changed="storageChanged"
+      :storages="storages"
+      :baseUrl="activeStorage.url"
+      @storage-changed="activeStorage = $event"
       @path-changed="pathChanged"
       @add-files="addUploadingFiles"
       @folder-created="refreshPending = true"
     />
     <v-row no-gutters>
-      <v-col v-if="tree && $vuetify.breakpoint.smAndUp" sm="auto">
+      <v-col v-if="$vuetify.breakpoint.smAndUp" sm="auto">
         <Tree
           :path="path"
-          :storage="activeStorage"
           :icons="icons"
-          :endpoints="endpoints"
-          :axios="axiosInstance"
           :refreshPending="refreshPending"
           @path-changed="pathChanged"
-          @loading="loadingChanged"
+          @loading="loading = $event"
           @refreshed="refreshPending = false"
         />
       </v-col>
-      <v-divider v-if="tree" vertical></v-divider>
+      <v-divider vertical></v-divider>
       <v-col>
         <List
           :path="path"
-          :storage="activeStorage"
+          :base-url="activeStorage.url"
           :icons="icons"
-          :endpoints="endpoints"
-          :axios="axiosInstance"
           :refreshPending="refreshPending"
           @path-changed="pathChanged"
-          @loading="loadingChanged"
+          @loading="loading = $event"
           @refreshed="refreshPending = false"
           @file-deleted="refreshPending = true"
         />
       </v-col>
     </v-row>
     <Upload
-      v-if="uploadingFiles !== false"
+      v-if="uploadingFiles.length !== 0"
       :path="path"
       :storage="activeStorage"
       :files="uploadingFiles"
       :icons="icons"
-      :axios="axiosInstance"
-      :endpoint="endpoints.upload"
+      :base-url="activeStorage.url"
       :maxUploadFilesCount="maxUploadFilesCount"
       :maxUploadFileSize="maxUploadFileSize"
       @add-files="addUploadingFiles"
       @remove-file="removeUploadingFile"
-      @clear-files="uploadingFiles = []"
-      @cancel="uploadingFiles = false"
+      @cancel="uploadingFiles = []"
       @uploaded="uploaded"
     />
   </v-card>
 </template>
 
-<script>
-// import axios from 'axios';
-
-import Toolbar from './Toolbar.vue';
-import Tree from './Tree.vue';
-import List from './List.vue';
-import Upload from './Upload.vue';
-
-const availableStorages = [
-  {
-    name: 'Local',
-    code: 'local',
-    icon: 'mdi-folder-multiple-outline',
-  },
-  /* {
-    name: "Dropbox",
-    code: "dropbox",
-    icon: "mdi-dropbox"
-  } */
-];
-
-const endpoints = {
-  list: { url: '/storage/{storage}/list?path={path}', method: 'get' },
-  upload: { url: '/storage/{storage}/upload?path={path}', method: 'post' },
-  mkdir: { url: '/storage/{storage}/mkdir?path={path}', method: 'post' },
-  delete: { url: '/storage/{storage}/delete?path={path}', method: 'post' },
-};
+<script lang="ts">
+import Vue, { PropType } from 'vue';
+import Toolbar from '@/components/Toolbar.vue';
+import Tree from '@/components/Tree.vue';
+import List from '@/components/List.vue';
+import Upload from '@/components/Upload.vue';
+import { Remote } from '@/types';
 
 const fileIcons = {
   zip: 'mdi-folder-zip-outline',
@@ -110,7 +81,7 @@ const fileIcons = {
   other: 'mdi-file-outline',
 };
 
-export default {
+export default Vue.extend({
   components: {
     Toolbar,
     Tree,
@@ -122,57 +93,28 @@ export default {
     event: 'change',
   },
   props: {
-  // comma-separated list of active storage codes
     storages: {
-      type: String,
-      default: () => availableStorages.map(item => item.code).join(','),
+      type: Array as PropType<Remote[]>,
     },
-    // code of default storage
-    storage: { type: String, default: 'local' },
-    // show tree view
-    tree: { type: Boolean, default: true },
-    // file icons set
-    icons: { type: Object, default: () => fileIcons },
-    // custom backend endpoints
-    endpoints: { type: Object, default: () => endpoints },
-    // custom axios instance
-    axios: { type: Function },
-    // custom configuration for internal axios instance
-    axiosConfig: { type: Object, default: () => {} },
+
     // max files count to upload at once. Unlimited by default
-    maxUploadFilesCount: { type: Number, default: 0 },
+    maxUploadFilesCount: { type: Number, default: Infinity },
     // max file size to upload. Unlimited by default
-    maxUploadFileSize: { type: Number, default: 0 },
+    maxUploadFileSize: { type: Number, default: Infinity },
   },
   data () {
     return {
       loading: false,
       path: '',
-      activeStorage: null,
-      uploadingFiles: false, // or an Array of files
+      activeStorage: this.storages[0],
+      uploadingFiles: [] as File[], // or an Array of files
       refreshPending: false,
-      axiosInstance: null,
+      icons: fileIcons,
     };
   },
-  computed: {
-    storagesArray () {
-      const storageCodes = this.storages.split(',');
-      const result = [];
-      storageCodes.forEach(code => {
-        result.push(availableStorages.find(item => item.code === code));
-      });
-      return result;
-    },
-  },
   methods: {
-    loadingChanged (loading) {
-      this.loading = loading;
-    },
-    storageChanged (storage) {
-      this.activeStorage = storage;
-    },
-    addUploadingFiles (files) {
-      files = Array.from(files);
+    addUploadingFiles (filelist: FileList) {
+      let files = Array.from(filelist);
 
       if (this.maxUploadFileSize) {
         files = files.filter(
@@ -180,7 +122,7 @@ export default {
         );
       }
 
-      if (this.uploadingFiles === false) {
+      if (this.uploadingFiles.length === 0) {
         this.uploadingFiles = [];
       }
 
@@ -190,29 +132,25 @@ export default {
 
       this.uploadingFiles.push(...files);
     },
-    removeUploadingFile (index) {
+    removeUploadingFile (index: number) {
       this.uploadingFiles.splice(index, 1);
     },
     uploaded () {
-      this.uploadingFiles = false;
+      this.uploadingFiles = [];
       this.refreshPending = true;
     },
-    pathChanged (path) {
+    pathChanged (path: string) {
       this.path = path;
       this.$emit('change', path);
     },
   },
   created () {
-    this.activeStorage = this.storage;
-  // this.axiosInstance = this.axios || axios.create(this.axiosConfig);
+    this.activeStorage = this.storages[0];
   },
   mounted () {
-    if (!this.path && !(this.tree && this.$vuetify.breakpoint.smAndUp)) {
+    if (!this.path && this.$vuetify.breakpoint.xsOnly) {
       this.pathChanged('/');
     }
   },
-};
+});
 </script>
-
-<style lang="scss" scoped>
-</style>
