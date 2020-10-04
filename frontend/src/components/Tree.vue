@@ -110,16 +110,22 @@ export default Vue.extend({
 
       const url = `${this.baseUrl}/dir/${item.path}`;
 
-      const response = await fetch(url);
-
-      const data: TreeItem[] = await response.json();
-
-      item.children = data.map(item => {
-        if (item.is_directory) {
-          item.children = [];
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw await response.text();
         }
-        return item;
-      });
+        const data: TreeItem[] = await response.json();
+        item.children = data.map(item => {
+          if (item.is_directory) {
+            item.children = [];
+          }
+          return item;
+        });
+      } catch (error) {
+        console.error(error);
+        alert('An error occured. Check the console');
+      }
 
       this.$emit('loading', false);
     },

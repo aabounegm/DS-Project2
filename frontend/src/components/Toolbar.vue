@@ -165,14 +165,22 @@ export default Vue.extend({
 
       const url = `${this.baseUrl}/dir/${this.path}/${this.newFolderName}`;
 
-      await fetch(url, {
-        method: 'post',
-      });
+      try {
+        const res = await fetch(url, {
+          method: 'post',
+        });
+        if (!res.ok) {
+          throw await res.text();
+        }
+        this.$emit('folder-created', this.newFolderName);
 
-      this.$emit('folder-created', this.newFolderName);
+        this.newFolderPopper = false;
+        this.newFolderName = '';
+      } catch (error) {
+        console.error(error);
+        alert('An error occured. Check the console');
+      }
 
-      this.newFolderPopper = false;
-      this.newFolderName = '';
       this.$emit('loading', false);
     },
   },

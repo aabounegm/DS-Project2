@@ -180,13 +180,20 @@ export default Vue.extend({
 
       this.uploading = true;
 
-      const _response = await fetch(url, {
-        method: 'post',
-        body: formData,
-      });
-
-      this.uploading = false;
-      this.$emit('uploaded');
+      try {
+        const response = await fetch(url, {
+          method: 'post',
+          body: formData,
+        });
+        if (!response.ok) {
+          throw await response.text();
+        }
+        this.uploading = false;
+        this.$emit('uploaded');
+      } catch (error) {
+        console.error(error);
+        alert('An error occured. Check the console');
+      }
     },
   },
   watch: {

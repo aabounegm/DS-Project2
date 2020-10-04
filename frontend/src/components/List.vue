@@ -154,9 +154,17 @@ export default Vue.extend({
       if (this.isDir) {
         const url = `${this.baseUrl}/dir/${this.path}`;
 
-        const response = await fetch(url);
-        const data = await response.json();
-        this.items = data;
+        try {
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw await response.text();
+          }
+          const data = await response.json();
+          this.items = data;
+        } catch (error) {
+          console.error(error);
+          alert('An error occured. Check the console');
+        }
       } else {
         // TODO: load file
       }
@@ -176,11 +184,18 @@ export default Vue.extend({
       this.$emit('loading', true);
       const url = `${this.baseUrl}/file/${item.path}`;
 
-      await fetch(url, {
-        method: 'delete',
-      });
-
-      this.$emit('file-deleted');
+      try {
+        const res = await fetch(url, {
+          method: 'delete',
+        });
+        if (!res.ok) {
+          throw await res.text();
+        }
+        this.$emit('file-deleted');
+      } catch (error) {
+        console.error(error);
+        alert('An error occured. Check the console');
+      }
       this.$emit('loading', false);
     },
   },
