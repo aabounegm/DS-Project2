@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 def create_app():
     """Create a Flask application"""
     app = Flask(__name__)
+    app.config.from_pyfile('config.py')
     mongo.init_app(app)
 
     logging.config.dictConfig({
