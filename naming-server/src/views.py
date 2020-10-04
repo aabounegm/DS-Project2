@@ -113,7 +113,7 @@ class FileAPI(MethodView):
         parent = Path('/')
         entry = None
         for part in parents:
-            entry = mongo.db.index.find_one({'name': part, 'parent': str(parents)})
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
             if entry is None:
                 mongo.db.index.insert_one({'name': part,
                                            'parent': str(parent),
@@ -179,3 +179,98 @@ file_api = FileAPI.as_view('file_api')
 api.add_url_rule('/file/<path>',
                  view_func=file_api,
                  methods=('GET', 'POST', 'PUT', 'DELETE'))
+
+
+class DirectoryAPI(MethodView):
+    """The API for manipulating directories on the naming server."""
+    def get(self, path: str):
+        """Retrieve the listing of a given directory."""
+        internal_path = validate_path(path)
+
+        parent = Path('/')
+        entry = None
+        for part in internal_path.parts:
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
+            if entry is None:
+                abort(404)
+            parent /= part
+
+        if not entry['is_directory']:
+            abort(404)
+
+        children = mongo.db.index.find({'parent': str(parent/entry['name'])})
+        listing = []
+        for child in children:
+            if child['is_directory']:
+                listing.append({
+                    'name': child['name'],
+                    'is_directory': True,
+                })
+            else:
+                listing.append({
+                    'name': child['name'],
+                    'is_directory': False,
+                    'size': child['size'],
+                    'replicas': len(child['servers']),
+                })
+
+        return jsonify(listing)
+
+    def post(self, path: str):
+        """Create a directory."""
+        internal_path = validate_path(path)
+
+        parent = Path('/')
+        entry = None
+        for part in internal_path.parts:
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
+            if entry is None:
+                entry = mongo.db.index.insert_one({'name': part,
+                                                   'parent': str(parent),
+                                                   'is_directory': True})
+            parent /= part
+
+        if not entry['is_directory']:
+            abort(400, 'A file with this name already exists.')
+
+        return NO_PAYLOAD
+
+    def delete(self, path: str):
+        """Delete an empty directory."""
+        internal_path = validate_path(path)
+
+        parent = Path('/')
+        entry = None
+        for part in internal_path.parts:
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
+            if entry is None:
+                return NO_PAYLOAD
+            parent /= part
+
+        if not entry['is_directory']:
+            abort(400, 'The path points to a file.')
+
+        children = mongo.db.index.find({'parent': str(parent/entry['name'])})
+        if tuple(children):
+            abort(400, 'Only empty directories can be removed.')
+
+        mongo.db.index.delete_one(entry)
+
+        return NO_PAYLOAD
+
+directory_api = FileAPI.as_view('directory_api')
+api.add_url_rule('/dir/<path>',
+                 view_func=directory_api,
+                 methods=('GET', 'POST', 'DELETE'))
+
+
+@api.route('/initialize')
+def initialize():
+    """Wipe everything from the storage servers."""
+    for server in mongo.db.servers.find():
+        response = requests.post(f'http://{server["_id"]/initialize}')
+        server['free_space'] = int(response.text)
+        mongo.db.servers.update_one({'_id': server['_id']}, server)
+
+    mongo.db.index.delete()
+    return jsonify(get_min_free_space())
