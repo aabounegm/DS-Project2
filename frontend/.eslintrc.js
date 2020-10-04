@@ -14,8 +14,10 @@ module.exports = {
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    semi: ['error', 'always'],
+    'semi': ['error', 'always'],
     'comma-dangle': ['warn', 'always-multiline'],
-    quotes: ['error', 'single'],
+    'quotes': ['error', 'single'],
+    '@typescript-eslint/no-empty-function': 'off',
+    '@typescript-eslint/no-unused-vars': ['error', { 'varsIgnorePattern': '^_' }]
   },
 };

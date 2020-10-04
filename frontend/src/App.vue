@@ -24,16 +24,21 @@
       <v-spacer></v-spacer>
     </v-app-bar>
 
-    <v-main> </v-main>
+    <v-main>
+      <FileBrowser />
+    </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
+import FileBrowser from '@/components/FileBrowser.vue';
 
 export default Vue.extend({
   name: 'App',
-
+  components: {
+    FileBrowser,
+  },
   data: () => ({
     //
   }),
