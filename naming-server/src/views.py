@@ -8,6 +8,7 @@ StaticFile:
 
 import logging
 import mimetypes
+from pathlib import Path
 
 import requests
 from flask import jsonify, request, abort, current_app
@@ -35,13 +36,13 @@ class FileAPI(MethodView):
         """Retrieve a file under a given path."""
         internal_path = validate_path(path)
 
-        parent = None
+        parent = Path('/')
         entry = None
         for part in internal_path.parts:
-            entry = mongo.db.index.find_one({'name': part, 'parent': parent})
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
             if entry is None:
                 abort(404)
-            parent = part
+            parent /= part
 
         if entry['is_directory'] or not entry['servers']:
             abort(404)
@@ -65,17 +66,17 @@ class FileAPI(MethodView):
         internal_path = validate_path(path)
 
         *parents, name = internal_path.parts
-        parent = None
+        parent = Path('/')
         entry = None
         for part in parents:
-            entry = mongo.db.index.find_one({'name': part, 'parent': parent})
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
             if entry is None:
                 mongo.db.index.insert_one({'name': part,
-                                           'parent': parent,
+                                           'parent': str(parent),
                                            'is_directory': True})
-            parent = part
+            parent /= part
 
-        entry = mongo.db.index.find_one({'name': name, 'parent': parent})
+        entry = mongo.db.index.find_one({'name': name, 'parent': str(parent)})
         if entry is not None:
             abort(400, 'A file with this name already exists.')
 
@@ -92,7 +93,7 @@ class FileAPI(MethodView):
 
         mongo.db.index.insert_one({
             'name': name,
-            'parent': parent,
+            'parent': str(parent),
             'is_directory': False,
             'size': get_file_size(file),
             'servers': ok_servers,
@@ -109,17 +110,17 @@ class FileAPI(MethodView):
         internal_path = validate_path(path)
 
         *parents, name = internal_path.parts
-        parent = None
+        parent = Path('/')
         entry = None
         for part in parents:
-            entry = mongo.db.index.find_one({'name': part, 'parent': parent})
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parents)})
             if entry is None:
                 mongo.db.index.insert_one({'name': part,
-                                           'parent': parent,
+                                           'parent': str(parent),
                                            'is_directory': True})
-            parent = part
+            parent /= part
 
-        entry = mongo.db.index.find_one({'name': name, 'parent': parent})
+        entry = mongo.db.index.find_one({'name': name, 'parent': str(parent)})
         if entry is not None:
             abort(400, 'A file with this name already exists.')
 
@@ -140,7 +141,7 @@ class FileAPI(MethodView):
             },
             {
                 'name': name,
-                'parent': parent,
+                'parent': str(parent),
                 'is_directory': False,
                 'size': get_file_size(file),
                 'servers': ok_servers,
@@ -154,13 +155,13 @@ class FileAPI(MethodView):
         """Delete a file under a given path."""
         internal_path = validate_path(path)
 
-        parent = None
+        parent = Path('/')
         entry = None
         for part in internal_path.parts:
-            entry = mongo.db.index.find_one({'name': part, 'parent': parent})
+            entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
             if entry is None:
                 abort(404)
-            parent = part
+            parent /= part
 
         if entry['is_directory']:
             abort(404)
