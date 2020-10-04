@@ -75,7 +75,7 @@ The naming server contains three architectural parts:
 
 ### The REST API
 
-The REST API of the naming server will be identical to the REST API of the storage server with the following exceptions:
+The REST API of the naming server will be similar to the REST API of the storage server with some additions.
 
 * `GET /file/<path>`  
   The behaviour should be identical to that of the storage server, but additionally the server should set the correct `Content-Type` header on the response based on the filename.
