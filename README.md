@@ -175,12 +175,12 @@ The sample of this structure:
 [
   {
     "name": "path1",
-    "parent": null,
+    "location": "/",
     "is_directory": true,
   },
   {
     "name": "file1",
-    "parent": null,
+    "location": "/",
     "is_directory": false,
     "size": 1024,
     "servers": [
@@ -190,7 +190,12 @@ The sample of this structure:
   },
   {
     "name": "path2",
-    "parent": "path1",
+    "location": "/path1",
+    "is_directory": true,
+  },
+  {
+    "name": "path3",
+    "location": "/path1/path2",
     "is_directory": true,
   }
 ]
