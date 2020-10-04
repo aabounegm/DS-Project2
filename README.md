@@ -64,6 +64,9 @@ It will use the following REST API:
 
   On success, the server should respond with 200 and the amount of free storage on the storage server in bytes.  
 
+* `POST /initialize`
+  Delete everything inside the storage folder and return the available size in bytes.
+
 
 ## Naming server
 
@@ -119,12 +122,13 @@ The REST API of the naming server will be similar to the REST API of the storage
   On success, the server should respond with 204.  
   If the specified path to the file contains inexistent directories, they should be automatically created.  
   If the path points to an existing directory, the server should return 204 as if the operation was successful.  
+  If the path points to a file, the server should return 400.  
   If the path points to an illegal location (outside the root), the server should return 400.  
 
 * `DELETE /dir/<path_to_directory>`  
   Delete a directory on the naming server.  
 
-  On success, the server should respond with 204.
+  On success, the server should respond with 204.  
   If the directory is not empty, the server should respond with 400 – only empty directories can be removed with this request.  
   If the directory doesn't exist, the server should respond with 204 as if the operation was successful.
 
