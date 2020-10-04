@@ -22,7 +22,5 @@ EXPOSE 7507
 
 ENV FLASK_ENV production
 
-VOLUME [ "/var/storage" ]
-
 # define the default command to run when starting the container
 CMD ["gunicorn", "--bind", ":7507", "--log-level=info", "--access-logfile", "-", "run:app"]
