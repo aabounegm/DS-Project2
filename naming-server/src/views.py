@@ -264,7 +264,7 @@ api.add_url_rule('/dir/<path>',
                  methods=('GET', 'POST', 'DELETE'))
 
 
-@api.route('/initialize')
+@api.route('/initialize', methods=['POST'])
 def initialize():
     """Wipe everything from the storage servers."""
     for server in mongo.db.servers.find():
