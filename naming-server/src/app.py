@@ -9,7 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from src.extensions import mongo
+from src.extensions import mongo, cors
 from src.blueprints import all_blueprints
 from src.actions import heartbeat
 
@@ -21,6 +21,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py')
     mongo.init_app(app)
+    cors.init_app(app)
 
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=heartbeat, trigger='interval', seconds=30)
