@@ -18,12 +18,15 @@ def validate_path(path: str) -> Path:
 
 
 def get_min_free_space() -> int:
-    return next(mongo.db.servers.aggregate([
-        {'$group': {
-            '_id': 0,
-            'min_free_space': { '$min': '$free_space' }
-        }}
-    ]))['min_free_space']
+    try:
+        return next(mongo.db.servers.aggregate([
+            {'$group': {
+                '_id': 0,
+                'min_free_space': { '$min': '$free_space' }
+            }}
+        ]))['min_free_space']
+    except StopIteration:
+        return 0
 
 
 def choose_server(among: List[str] = None):
