@@ -154,6 +154,8 @@ The REST API of the naming server will be similar to the REST API of the storage
   }
   ```
 
+  The server will respond with a structure similar to that of the `/synchronize` endpoint instructing the newly joined server on where to download the missing files.
+
   Upon registering the storage server, the naming server adds an entry to a MongoDB collection `servers` with the address of the server and the amount of free space on the storage server in bytes. Sample document:
   ```json
   {
