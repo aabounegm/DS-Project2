@@ -86,7 +86,7 @@
 
 <script lang="ts">
 import formatBytes from '@/utils/formatBytes';
-import { Icons, MyFile } from '@/types';
+import { Icons, MyFile, Remote } from '@/types';
 import Vue, { PropType } from 'vue';
 
 const imageMimeTypes = ['image/png', 'image/jpeg'];
@@ -97,7 +97,7 @@ export default Vue.extend({
       type: String,
     },
     storage: {
-      type: String,
+      type: Object as PropType<Remote>,
     },
     baseUrl: {
       type: String,
@@ -191,8 +191,9 @@ export default Vue.extend({
           if (!response.ok) {
             throw await response.text();
           }
+          const remainingStorageSize = await response.json();
           this.uploading = false;
-          this.$emit('uploaded');
+          this.$emit('uploaded', remainingStorageSize);
         } catch (error) {
           console.error(error);
           alert('An error occured. Check the console');

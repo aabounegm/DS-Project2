@@ -37,6 +37,7 @@
     </v-toolbar-items>
     <div class="flex-grow-1"></div>
 
+    Available storage: {{ formatBytes(remainingStorage) }}
     <template v-if="$vuetify.breakpoint.smAndUp">
       <v-tooltip bottom v-if="pathSegments.length > 0">
         <template #activator="{ on }">
@@ -89,6 +90,7 @@
 
 <script lang="ts">
 import Vue, { PropType } from 'vue';
+import formatBytes from '@/utils/formatBytes';
 import { Remote } from '@/types';
 
 export default Vue.extend({
@@ -101,6 +103,9 @@ export default Vue.extend({
     },
     path: {
       type: String,
+    },
+    remainingStorage: {
+      type: Number,
     },
   },
   data () {
@@ -131,6 +136,7 @@ export default Vue.extend({
     },
   },
   methods: {
+    formatBytes,
     changeStorage (url: string) {
       if (this.baseUrl === url) { return; }
 

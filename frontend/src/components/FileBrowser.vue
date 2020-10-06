@@ -4,6 +4,7 @@
       :path="path"
       :storages="storages"
       :baseUrl="activeStorage.url"
+      :remaining-storage="remainingStorage"
       @storage-changed="activeStorage = $event"
       @path-changed="pathChanged"
       @add-files="addUploadingFiles"
@@ -97,7 +98,6 @@ export default Vue.extend({
     storages: {
       type: Array as PropType<Remote[]>,
     },
-
     // max files count to upload at once. Unlimited by default
     maxUploadFilesCount: { type: Number, default: Infinity },
     // max file size to upload. Unlimited by default
@@ -106,6 +106,7 @@ export default Vue.extend({
   data () {
     return {
       loading: false,
+      remainingStorage: 0,
       path: '',
       activeStorage: this.storages[0],
       uploadingFiles: [] as File[], // or an Array of files
@@ -136,7 +137,8 @@ export default Vue.extend({
     removeUploadingFile (index: number) {
       this.uploadingFiles.splice(index, 1);
     },
-    uploaded () {
+    uploaded (remaining: number) {
+      this.remainingStorage = remaining;
       this.uploadingFiles = [];
       this.refreshPending = true;
     },
