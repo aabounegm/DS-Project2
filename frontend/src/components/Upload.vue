@@ -176,29 +176,27 @@ export default Vue.extend({
       this.listItems = [];
     },
     async upload () {
-      const formData = new FormData();
-
       for (const file of this.files) {
-        formData.append('files', file, file.name);
-      }
+        const formData = new FormData();
+        formData.append('file', file, file.name);
+        const url = `${this.baseUrl}/file${this.path}${file.name}`;
 
-      const url = `${this.baseUrl}/file/${this.path}`;
+        this.uploading = true;
 
-      this.uploading = true;
-
-      try {
-        const response = await fetch(url, {
-          method: 'post',
-          body: formData,
-        });
-        if (!response.ok) {
-          throw await response.text();
+        try {
+          const response = await fetch(url, {
+            method: 'post',
+            body: formData,
+          });
+          if (!response.ok) {
+            throw await response.text();
+          }
+          this.uploading = false;
+          this.$emit('uploaded');
+        } catch (error) {
+          console.error(error);
+          alert('An error occured. Check the console');
         }
-        this.uploading = false;
-        this.$emit('uploaded');
-      } catch (error) {
-        console.error(error);
-        alert('An error occured. Check the console');
       }
     },
   },
