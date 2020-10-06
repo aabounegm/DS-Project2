@@ -8,6 +8,7 @@ StaticFile:
 
 import logging
 import mimetypes
+import time
 from pathlib import Path
 
 import requests
@@ -96,6 +97,7 @@ class FileAPI(MethodView):
             'parent': str(parent),
             'is_directory': False,
             'size': get_file_size(file),
+            'last_modified': int(time.time()),
             'servers': ok_servers,
         })
 
@@ -144,6 +146,7 @@ class FileAPI(MethodView):
                 'parent': str(parent),
                 'is_directory': False,
                 'size': get_file_size(file),
+                'last_modified': int(time.time()),
                 'servers': ok_servers,
             },
             upsert=True
@@ -274,3 +277,28 @@ def initialize():
 
     mongo.db.index.delete()
     return jsonify(get_min_free_space())
+
+
+@api.route('/join', methods=['POST'])
+def join():
+    """Add a storage server to the pool of servers."""
+    mongo.db.servers.insert_one({
+        '_id': request.remote_addr,
+        'free_space': request.json['free_space']
+    })
+
+    this_missing = {}
+    for file in request.json['files']:
+        path = validate_path(file)
+        entry = mongo.db.index.find_one({
+            'name': path.name,
+            'parent': str(path.parent),
+        })
+
+        if entry is None:
+            continue
+
+        if entry['last_modified'] != request.json['files'][file]:
+            this_missing[file] = choose_server(among=entry['servers'])
+
+    return jsonify(this_missing)

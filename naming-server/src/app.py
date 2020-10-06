@@ -1,14 +1,17 @@
 """Flask application factory."""
 
+import atexit
 from importlib import import_module
 import logging
 import logging.config
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from src.extensions import mongo
 from src.blueprints import all_blueprints
+from src.actions import heartbeat
 
 log = logging.getLogger(__name__)
 
@@ -18,6 +21,13 @@ def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('config.py')
     mongo.init_app(app)
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=heartbeat, trigger='interval', seconds=30)
+    scheduler.start()
+
+    # Shut down the scheduler when exiting the app
+    atexit.register(scheduler.shutdown)
 
     logging.config.dictConfig({
         'version': 1,
