@@ -103,6 +103,7 @@ The REST API of the naming server will be similar to the REST API of the storage
       "name": "file.txt",
       "is_directory": false,
       "size": 1337,
+      "last_modified": 1338,
       "replicas": 2
     },
     {
@@ -187,6 +188,7 @@ The sample of this structure:
     "location": "/",
     "is_directory": false,
     "size": 1024,
+    "last_modified": 1338,
     "servers": [
       "127.0.0.1",
       "127.0.0.2"
