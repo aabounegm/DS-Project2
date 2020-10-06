@@ -17,7 +17,7 @@
       >
         <template v-slot:prepend="{ item, open }">
           <v-icon
-            v-if="item.type === 'dir'"
+            v-if="item.is_directory"
           >{{ open ? 'mdi-folder-open-outline' : 'mdi-folder-outline' }}</v-icon>
           <v-icon v-else>{{ icons[item.extension] || icons['other'] }}</v-icon>
         </template>
@@ -25,7 +25,7 @@
           {{item.name}}
           <v-btn
             icon
-            v-if="item.type === 'dir'"
+            v-if="item.is_directory"
             @click.stop="readFolder(item)"
             class="ml-1"
           >
@@ -108,7 +108,7 @@ export default Vue.extend({
       }
       this.$emit('loading', true);
 
-      const url = `${this.baseUrl}/dir/${item.path}`;
+      const url = `${this.baseUrl}/dir${item.path}`;
 
       try {
         const response = await fetch(url);

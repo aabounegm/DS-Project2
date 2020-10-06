@@ -15,6 +15,7 @@
           :path="path"
           :icons="icons"
           :refreshPending="refreshPending"
+          :base-url="activeStorage.url"
           @path-changed="pathChanged"
           @loading="loading = $event"
           @refreshed="refreshPending = false"

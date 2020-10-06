@@ -14,7 +14,7 @@
         <v-subheader>Folders</v-subheader>
         <v-list-item
           v-for="item in dirs"
-          :key="item.basename"
+          :key="item.name"
           @click="changePath(item.path)"
           class="pl-0"
         >
@@ -22,7 +22,7 @@
             <v-icon>mdi-folder-outline</v-icon>
           </v-list-item-avatar>
           <v-list-item-content class="py-2">
-            <v-list-item-title v-text="item.basename"></v-list-item-title>
+            <v-list-item-title v-text="item.name"></v-list-item-title>
           </v-list-item-content>
           <v-list-item-action>
             <v-btn icon @click.stop="deleteItem(item)">
@@ -39,7 +39,7 @@
         <v-subheader>Files</v-subheader>
         <v-list-item
           v-for="item in files"
-          :key="item.basename"
+          :key="item.name"
           @click="changePath(item.path)"
           class="pl-0"
         >
@@ -101,7 +101,7 @@
 import formatBytes from '@/utils/formatBytes';
 import Confirm from './Confirm.vue';
 import Vue, { PropType } from 'vue';
-import { Item, Icons } from '@/types';
+import { Icons, TreeItem } from '@/types';
 
 export default Vue.extend({
   props: {
@@ -121,20 +121,20 @@ export default Vue.extend({
   },
   data () {
     return {
-      items: [] as Item[],
+      items: [] as TreeItem[],
       filter: '',
     };
   },
   computed: {
-    dirs (): Item[] {
+    dirs (): TreeItem[] {
       return this.items.filter(
-        item => item.type === 'dir' && item.name.includes(this.filter),
+        item => item.is_directory && item.name.includes(this.filter),
       );
     },
-    files (): Item[] {
+    files (): TreeItem[] {
       return this.items.filter(
         item =>
-          item.type === 'file' && item.name.includes(this.filter),
+          !item.is_directory && item.name.includes(this.filter),
       );
     },
     isDir (): boolean {
@@ -152,7 +152,7 @@ export default Vue.extend({
     async load () {
       this.$emit('loading', true);
       if (this.isDir) {
-        const url = `${this.baseUrl}/dir/${this.path}`;
+        const url = `${this.baseUrl}/dir${this.path}`;
 
         try {
           const response = await fetch(url);
@@ -170,11 +170,11 @@ export default Vue.extend({
       }
       this.$emit('loading', false);
     },
-    async deleteItem (item: Item) {
+    async deleteItem (item: TreeItem) {
       const dialog = this.$refs.confirm as InstanceType<typeof Confirm>;
       const confirmed = await dialog.open('Delete',
         `Are you sure<br>you want to delete this ${
-          item.type === 'dir' ? 'folder' : 'file'
+          item.is_directory ? 'folder' : 'file'
         }?<br><em>${item.name}</em>`,
       );
 

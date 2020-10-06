@@ -1,9 +1,3 @@
-export type Item = {
-  type: 'file' | 'dir';
-  path: string;
-  name: string;
-};
-
 export type Icons = Record<string, string>;
 
 export type MyFile = {

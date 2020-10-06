@@ -117,8 +117,7 @@ export default Vue.extend({
       const segments = thisPath.split('/').filter(item => item);
 
       const segmentsDetailed = segments.map((item, index) => {
-        path +=
-          item + (index < segments.length - 1 || isFolder ? '/' : '');
+        path += item + (index < segments.length - 1 || isFolder ? '/' : '');
         return {
           name: item,
           path,
