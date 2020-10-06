@@ -145,6 +145,7 @@ The REST API of the naming server will be similar to the REST API of the storage
   Sample request body:  
   ```json
   {
+    "port": 8080,
     "free_space": 1024,
     "files": {
       "/path1/path2/file1": 1337,
