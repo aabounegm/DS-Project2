@@ -4,14 +4,20 @@
       <v-card-text class="py-3 text-center">
         <div>
           <span class="grey--text">Upload to:</span>
-          <v-chip color="info" class="mx-1">{{ storage }}</v-chip>
+          <v-chip color="info" class="mx-1">{{ storage.name }}</v-chip>
           <v-chip>{{ path }}</v-chip>
         </div>
         <div v-if="maxUploadFilesCount">
-          <span class="grey--text">Max files count: {{ maxUploadFilesCount }}</span>
+          <span class="grey--text">Max files count:
+            <v-icon small v-if="maxUploadFilesCount === Infinity">mdi-infinity</v-icon>
+            <span v-else>maxUploadFilesCount</span>
+          </span>
         </div>
         <div v-if="maxUploadFileSize">
-          <span class="grey--text">Max file size: {{ formatBytes(maxUploadFileSize) }}</span>
+          <span class="grey--text">Max file size:
+            <v-icon small v-if="maxUploadFileSize === Infinity">mdi-infinity</v-icon>
+            <span v-else>{{ formatBytes(maxUploadFileSize) }}</span>
+          </span>
         </div>
       </v-card-text>
       <v-divider />
