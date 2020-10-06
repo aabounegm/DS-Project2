@@ -45,12 +45,12 @@ class FileAPI(MethodView):
                 abort(404)
             parent /= part
 
-        if entry['is_directory'] or not entry['servers']:
+        if entry is None or entry['is_directory'] or not entry['servers']:
             abort(404)
 
         server = choose_server(among=entry['servers'])
 
-        file = requests.get(f'http://{server}/{internal_path}')
+        file = requests.get(f'http://{server}/file/{internal_path}')
         if not file.ok:
             abort(400, 'File download failed.')
 
@@ -83,7 +83,7 @@ class FileAPI(MethodView):
 
         ok_servers = []
         for server in mongo.db.servers.find():
-            response = requests.post(f'http://{server["_id"]}/{internal_path}',
+            response = requests.post(f'http://{server["_id"]}/file/{internal_path}',
                                      files={'file': file.stream})
             if not response.ok:
                 continue
@@ -128,7 +128,7 @@ class FileAPI(MethodView):
 
         ok_servers = []
         for server in mongo.db.servers.find():
-            response = requests.post(f'http://{server["_id"]}/{internal_path}',
+            response = requests.post(f'http://{server["_id"]}/file/{internal_path}',
                                      files={'file': file.stream})
             if not response.ok:
                 continue
@@ -170,7 +170,7 @@ class FileAPI(MethodView):
             abort(404)
 
         for server in entry['servers']:
-            response = requests.delete(f'http://{server}/{internal_path}')
+            response = requests.delete(f'http://{server}/file/{internal_path}')
             mongo.db.servers.update_one(
                 {'_id': server},
                 {'_id': server, 'free_space': int(response.text)},
@@ -179,8 +179,12 @@ class FileAPI(MethodView):
         return jsonify(get_min_free_space())
 
 file_api = FileAPI.as_view('file_api')
-api.add_url_rule('/file/<path>',
+api.add_url_rule('/file/<path:path>',
                  view_func=file_api,
+                 methods=('GET', 'POST', 'PUT', 'DELETE'))
+api.add_url_rule('/file/',
+                 view_func=file_api,
+                 defaults={'path': ''},
                  methods=('GET', 'POST', 'PUT', 'DELETE'))
 
 
@@ -191,7 +195,7 @@ class DirectoryAPI(MethodView):
         internal_path = validate_path(path)
 
         parent = Path('/')
-        entry = None
+        entry = {'name': '.', 'is_directory': True}
         for part in internal_path.parts:
             entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
             if entry is None:
@@ -201,17 +205,19 @@ class DirectoryAPI(MethodView):
         if not entry['is_directory']:
             abort(404)
 
-        children = mongo.db.index.find({'parent': str(parent/entry['name'])})
+        children = mongo.db.index.find({'parent': str(parent)})
         listing = []
         for child in children:
             if child['is_directory']:
                 listing.append({
                     'name': child['name'],
+                    'path': str(Path('/') / internal_path / child['name']) + '/',
                     'is_directory': True,
                 })
             else:
                 listing.append({
                     'name': child['name'],
+                    'path': str(Path('/') / internal_path / child['name']),
                     'is_directory': False,
                     'size': child['size'],
                     'replicas': len(child['servers']),
@@ -228,9 +234,10 @@ class DirectoryAPI(MethodView):
         for part in internal_path.parts:
             entry = mongo.db.index.find_one({'name': part, 'parent': str(parent)})
             if entry is None:
-                entry = mongo.db.index.insert_one({'name': part,
-                                                   'parent': str(parent),
-                                                   'is_directory': True})
+                entry = {'name': part,
+                         'parent': str(parent),
+                         'is_directory': True}
+                mongo.db.index.insert_one(entry)
             parent /= part
 
         if not entry['is_directory']:
@@ -257,13 +264,17 @@ class DirectoryAPI(MethodView):
         if tuple(children):
             abort(400, 'Only empty directories can be removed.')
 
-        mongo.db.index.delete_one(entry)
+        mongo.db.index.remove_one(entry)
 
         return NO_PAYLOAD
 
-directory_api = FileAPI.as_view('directory_api')
-api.add_url_rule('/dir/<path>',
+directory_api = DirectoryAPI.as_view('directory_api')
+api.add_url_rule('/dir/<path:path>',
                  view_func=directory_api,
+                 methods=('GET', 'POST', 'DELETE'))
+api.add_url_rule('/dir/',
+                 view_func=directory_api,
+                 defaults={'path': ''},
                  methods=('GET', 'POST', 'DELETE'))
 
 
@@ -271,11 +282,11 @@ api.add_url_rule('/dir/<path>',
 def initialize():
     """Wipe everything from the storage servers."""
     for server in mongo.db.servers.find():
-        response = requests.post(f'http://{server["_id"]/initialize}')
+        response = requests.post(f'http://{server["_id"]}/initialize')
         server['free_space'] = int(response.text)
         mongo.db.servers.update_one({'_id': server['_id']}, server)
 
-    mongo.db.index.delete()
+    mongo.db.index.remove()
     return jsonify(get_min_free_space())
 
 
@@ -283,7 +294,7 @@ def initialize():
 def join():
     """Add a storage server to the pool of servers."""
     mongo.db.servers.insert_one({
-        '_id': request.remote_addr,
+        '_id': f'{request.remote_addr}:{request.json["port"]}',
         'free_space': request.json['free_space']
     })
 
