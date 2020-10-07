@@ -32,4 +32,4 @@ ENV FLASK_ENV production
 ENV MONGO_URI mongodb://localhost:27017/db
 
 # define the default command to run when starting the container
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ./docker-entrypoint.sh

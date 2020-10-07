@@ -34,4 +34,4 @@ if __name__ == '__main__':
             resp = requests.get(f'http://{missing_files[file]}{file}')
             if resp.ok:
                 (storage_root/file[1:]).write_bytes(resp.content)
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+    app.run(host='0.0.0.0', port=PORT, debug=False)

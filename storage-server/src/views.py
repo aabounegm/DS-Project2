@@ -17,8 +17,8 @@ def heartbeat():
 
 class FileAPI(MethodView):
     #==============================================reading file=========================
-    def get(self, pathToFile: str):
-        full_path = storage_root/pathToFile
+    def get(self, path: str):
+        full_path = storage_root/path
 
         if full_path.exists():
             response = current_app.make_response(full_path.read_bytes())
@@ -29,9 +29,9 @@ class FileAPI(MethodView):
 
     #==============================================create file=========================
 
-    def post(self, pathToFile: str):
+    def post(self, path: str):
         #data = request.get_json()
-        full_path = storage_root/pathToFile
+        full_path = storage_root/path
         fileContent= request.files['file'].read()
 
         if full_path.exists():
@@ -44,8 +44,8 @@ class FileAPI(MethodView):
 
     #==============================================Update file=========================
 
-    def put(self, pathToFile):
-        full_path = storage_root/pathToFile
+    def put(self, path):
+        full_path = storage_root/path
         fileContent= request.files['file'].read()
 
         full_path.parent.mkdir(parents= True, exist_ok = True)
@@ -53,8 +53,8 @@ class FileAPI(MethodView):
         return str(shutil.disk_usage(storage_root)[2])
 
     #==============================================Delete file=========================
-    def delete(self, pathToFile):
-        full_path = storage_root/pathToFile
+    def delete(self, path):
+        full_path = storage_root/path
         full_path.unlink(missing_ok=True)
         return str(shutil.disk_usage(storage_root)[2])
 
