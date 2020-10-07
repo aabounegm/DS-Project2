@@ -137,7 +137,7 @@ class FileAPI(MethodView):
             mongo.db.servers.replace_one({'_id': server['_id']}, server)
             ok_servers.append(server['_id'])
 
-        mongo.db.index.update_one(
+        mongo.db.index.replace_one(
             {
                 'name': name,
             },
@@ -171,10 +171,12 @@ class FileAPI(MethodView):
 
         for server in entry['servers']:
             response = requests.delete(f'http://{server}/file/{internal_path}')
-            mongo.db.servers.update_one(
+            mongo.db.servers.replace_one(
                 {'_id': server},
                 {'_id': server, 'free_space': int(response.text)},
             )
+
+        mongo.delete_one(entry)
 
         return jsonify(get_min_free_space())
 
@@ -284,7 +286,7 @@ def initialize():
     for server in mongo.db.servers.find():
         response = requests.post(f'http://{server["_id"]}/initialize')
         server['free_space'] = int(response.text)
-        mongo.db.servers.update_one({'_id': server['_id']}, server)
+        mongo.db.servers.replace_one({'_id': server['_id']}, server)
 
     mongo.db.index.remove()
     return jsonify(get_min_free_space())
