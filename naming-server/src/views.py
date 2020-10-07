@@ -264,7 +264,7 @@ class DirectoryAPI(MethodView):
         if tuple(children):
             abort(400, 'Only empty directories can be removed.')
 
-        mongo.db.index.remove_one(entry)
+        mongo.db.index.delete_one(entry)
 
         return NO_PAYLOAD
 
