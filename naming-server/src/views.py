@@ -313,3 +313,8 @@ def join():
             this_missing[file] = choose_server(among=entry['servers'])
 
     return jsonify(this_missing)
+
+
+@api.route('/free_space')
+def free_space():
+    return jsonify(get_min_free_space())
