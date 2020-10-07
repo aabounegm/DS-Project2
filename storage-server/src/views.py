@@ -68,13 +68,8 @@ app.add_url_rule('/file/',
 
 #==============================================Initialize folder=========================
 
-@app.route('/INITIALIZE/<string:pth>', methods=['GET'])
+@app.route('/initialize/<path:pth>', methods=['GET'])
 def initialize_folder(pth) :
-    folder=path[0:path.rfind('\\')]
-    for sub in os.listdir(pth) :
-        if os.path.isdir(folder+"\\"+sub) :
-            shutil.rmtree(folder+"\\"+sub)
-        else:
-            os.remove(folder+"\\"+sub)
+    shutil.rmtree(storage_root)
     memory = shutil.disk_usage(folder)
-    return "the amount of free storage on the storage server in bytes is: "+str(memory[2])
+    return str(memory[2])
