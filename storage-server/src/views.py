@@ -1,5 +1,6 @@
 from flask import jsonify, request, abort, current_app
 from flask.views import MethodView
+import requests
 import os
 import shutil
 
@@ -71,5 +72,15 @@ app.add_url_rule('/file/',
 @app.route('/initialize/<path:pth>', methods=['GET'])
 def initialize_folder(pth) :
     shutil.rmtree(storage_root)
+    memory = shutil.disk_usage(folder)
+    return str(memory[2])
+
+
+@app.route('/synchronize', methods=['POST'])
+def synchronize():
+    for file in request.json:
+        resp = requests.get(f'http://{request.json[file]}{file}')
+        if resp.ok:
+            (storage_root/file[1:]).write_bytes(resp.content)
     memory = shutil.disk_usage(folder)
     return str(memory[2])
