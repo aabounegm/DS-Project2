@@ -23,14 +23,28 @@
         </template>
         <template v-slot:label="{ item }">
           {{item.name}}
-          <v-btn
-            icon
-            v-if="item.is_directory"
-            @click.stop="readFolder(item)"
-            class="ml-1"
-          >
-            <v-icon class="pa-0 mdi-18px" color="grey lighten-1">mdi-refresh</v-icon>
-          </v-btn>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on }">
+              <v-btn
+                icon
+                v-if="item.is_directory"
+                @click.stop="readFolder(item)"
+                v-on="on"
+                class="ml-1"
+              >
+                <v-icon class="pa-0 mdi-18px" color="grey lighten-1">mdi-refresh</v-icon>
+              </v-btn>
+            </template>
+            <span>Refresh</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on }">
+              <v-btn icon v-if="item.path === '/'" @click.stop="initialize" v-on="on" class="ml-1">
+                <v-icon class="pa-0 mdi-18px" color="error">mdi-nuke</v-icon>
+              </v-btn>
+            </template>
+            <span>Initialize (clear all)</span>
+          </v-tooltip>
         </template>
       </v-treeview>
     </div>
@@ -160,6 +174,16 @@ export default Vue.extend({
     extension (item: TreeItem): string {
       const parts = item.name.split('.');
       return parts[parts.length - 1];
+    },
+    async initialize () {
+      try {
+        const res = await fetch(`${this.baseUrl}/initialize`);
+        const size = await res.json();
+        this.$emit('init', size);
+      } catch (error) {
+        console.error(error);
+        alert('An error occured. Check the console');
+      }
     },
   },
   watch: {
