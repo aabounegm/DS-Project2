@@ -1,22 +1,11 @@
-from flask import Flask,jsonify, request, abort
+from flask import jsonify, request, abort, current_app
 from flask.views import MethodView
 import os
 import shutil
-import pathlib
 
+from src.blueprints import app
+from src.config import storage_root
 
-app = Flask(__name__)
-storage_root = pathlib.Path(os.getenv('STORAGE_DIR', '/var/storage'))
-
-
-file_api = FileAPI.as_view('file_api')
-app.add_url_rule('/file/<path:path>',
-                 view_func=file_api,
-                 methods=('GET', 'POST', 'PUT', 'DELETE'))
-app.add_url_rule('/file/',
-                 view_func=file_api,
-                 defaults={'path': ''},
-                 methods=('GET', 'POST', 'PUT', 'DELETE'))
 
 #==============================================heartbeat<3=========================
 
@@ -31,70 +20,51 @@ class FileAPI(MethodView):
         full_path = storage_root/pathToFile
 
         if full_path.exists():
-                response = app.make_response(full_path.read_bytes())
-                return response
+            response = current_app.make_response(full_path.read_bytes())
+            return response
         else:
             abort(404)
 #       return jsonify({"text : ":pathToFile})
 
     #==============================================create file=========================
 
-    def post0(self, pathToFile: str, fileContent):
-
-        folder=pathToFile[0:pathToFile.rfind('/')]
-        f = open(pathToFile, "w")
-        f.write(fileContent)
-        f.close()
-        memory = shutil.disk_usage(folder)
-        return str(memory[2])
-
-
-    def post1(self, pathToFile: str):
+    def post(self, pathToFile: str):
         #data = request.get_json()
         full_path = storage_root/pathToFile
         fileContent= request.files['file'].read()
 
-        folder=pathToFile[0:pathToFile.rfind('/')]    #to keep the path without the name of the file
-        if os.path.exists(full_path):
+        if full_path.exists():
             abort(404)
         else:
             full_path.parent.mkdir(parents= True, exist_ok = True)
+            full_path.write_bytes(fileContent)
+            return str(shutil.disk_usage(storage_root)[2])
 
 
     #==============================================Update file=========================
 
-    def put0(self, pathToFile, fileContent):
-        #this is an auxiliary function to update a simple file with keeping the old content
-        folder=pathToFile[0:pathToFile.rfind('/')]
-        f = open(pathToFile, "a+")
-        f.write(fileContent)
-        f.close()
-        memory = shutil.disk_usage(folder)
-        return str(memory[2])
-
-
-    def put1(self, pathToFile):                    #this is the main function to update
+    def put(self, pathToFile):
         full_path = storage_root/pathToFile
         fileContent= request.files['file'].read()
 
-        folder=pathToFile[0:pathToFile.rfind('/')]    #to keep the path without the name of the file
-        if os.path.exists(full_path):
-            abort(404)
-        else:
-            full_path.parent.mkdir(parents= True, exist_ok = True)
+        full_path.parent.mkdir(parents= True, exist_ok = True)
+        full_path.write_bytes(fileContent)
+        return str(shutil.disk_usage(storage_root)[2])
 
     #==============================================Delete file=========================
     def delete(self, pathToFile):
-        folder=path[0:path.rfind('/')]
-        if os.path.exists(path):
-            os.remove(path)
-            memory = shutil.disk_usage(folder)
-            if len(os.listdir(folder))==0:
-                shutil.rmtree(folder)    #to delete a folder if it's empty
-                #print("folder deleted")
-            return str(memory[2])
-        else:
-            abort(404)
+        full_path = storage_root/pathToFile
+        full_path.unlink(missing_ok=True)
+        return str(shutil.disk_usage(storage_root)[2])
+
+file_api = FileAPI.as_view('file_api')
+app.add_url_rule('/file/<path:path>',
+                 view_func=file_api,
+                 methods=('GET', 'POST', 'PUT', 'DELETE'))
+app.add_url_rule('/file/',
+                 view_func=file_api,
+                 defaults={'path': ''},
+                 methods=('GET', 'POST', 'PUT', 'DELETE'))
 
 #==============================================Initialize folder=========================
 
@@ -108,6 +78,3 @@ def initialize_folder(pth) :
             os.remove(folder+"\\"+sub)
     memory = shutil.disk_usage(folder)
     return "the amount of free storage on the storage server in bytes is: "+str(memory[2])
-
-if __name__ == '__main__':
-    app.run()
