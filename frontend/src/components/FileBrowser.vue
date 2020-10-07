@@ -155,5 +155,14 @@ export default Vue.extend({
       this.pathChanged('/');
     }
   },
+  watch: {
+    activeStorage: {
+      immediate: true,
+      async handler (value: Remote) {
+        const res = await fetch(`${value.url}/free_space`);
+        this.remainingStorage = await res.json();
+      },
+    },
+  },
 });
 </script>

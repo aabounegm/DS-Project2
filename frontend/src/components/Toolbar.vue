@@ -38,53 +38,51 @@
     <div class="flex-grow-1"></div>
 
     Available storage: {{ formatBytes(remainingStorage) }}
-    <template v-if="$vuetify.breakpoint.smAndUp">
-      <v-tooltip bottom v-if="pathSegments.length > 0">
-        <template #activator="{ on }">
-          <v-btn icon @click="goUp" v-on="on">
-            <v-icon>mdi-arrow-up-bold-outline</v-icon>
-          </v-btn>
-        </template>
-        <span v-if="pathSegments.length === 1">Up to "root"</span>
-        <span v-else>Up to "{{pathSegments[pathSegments.length - 2].name}}"</span>
-      </v-tooltip>
-      <v-menu
-        v-model="newFolderPopper"
-        :close-on-content-click="false"
-        :nudge-width="200"
-        offset-y
-      >
-        <template #activator="{ on }">
-          <v-btn v-if="path" icon v-on="on" title="Create Folder">
-            <v-icon>mdi-folder-plus-outline</v-icon>
-          </v-btn>
-        </template>
-        <v-card>
-          <v-card-text>
-            <v-text-field label="Name" v-model="newFolderName" hide-details />
-          </v-card-text>
-          <v-card-actions>
-            <div class="flex-grow-1"></div>
-            <v-btn @click="newFolderPopper = false" depressed>Cancel</v-btn>
-            <v-btn
-              color="success"
-              :disabled="!newFolderName"
-              depressed
-              @click="mkdir"
-            >Create Folder</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-menu>
-      <v-tooltip bottom v-if="path">
-        <template #activator="{ on }">
-          <v-btn v-on="on" icon @click="$refs.inputUpload.click()">
-            <v-icon>mdi-plus-circle</v-icon>
-            <input v-show="false" ref="inputUpload" type="file" multiple @change="addFiles" />
-          </v-btn>
-        </template>
-        <span>Upload files</span>
-      </v-tooltip>
-    </template>
+    <v-tooltip bottom v-if="pathSegments.length > 0">
+      <template #activator="{ on }">
+        <v-btn icon @click="goUp" v-on="on">
+          <v-icon>mdi-arrow-up-bold-outline</v-icon>
+        </v-btn>
+      </template>
+      <span v-if="pathSegments.length === 1">Up to "root"</span>
+      <span v-else>Up to "{{pathSegments[pathSegments.length - 2].name}}"</span>
+    </v-tooltip>
+    <v-menu
+      v-model="newFolderPopper"
+      :close-on-content-click="false"
+      :nudge-width="200"
+      offset-y
+    >
+      <template #activator="{ on, attrs }">
+        <v-btn v-show="!!path" icon v-on="on" v-bind="attrs" title="Create Folder">
+          <v-icon>mdi-folder-plus-outline</v-icon>
+        </v-btn>
+      </template>
+      <v-card>
+        <v-card-text>
+          <v-text-field label="Name" v-model="newFolderName" hide-details />
+        </v-card-text>
+        <v-card-actions>
+          <div class="flex-grow-1"></div>
+          <v-btn @click="newFolderPopper = false" depressed>Cancel</v-btn>
+          <v-btn
+            color="success"
+            :disabled="!newFolderName"
+            depressed
+            @click="mkdir"
+          >Create Folder</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-menu>
+    <v-tooltip bottom v-if="path">
+      <template #activator="{ on }">
+        <v-btn v-on="on" icon @click="$refs.inputUpload.click()">
+          <v-icon>mdi-plus-circle</v-icon>
+          <input v-show="false" ref="inputUpload" type="file" multiple @change="addFiles" />
+        </v-btn>
+      </template>
+      <span>Upload files</span>
+    </v-tooltip>
   </v-toolbar>
 </template>
 
@@ -168,7 +166,7 @@ export default Vue.extend({
     async mkdir () {
       this.$emit('loading', true);
 
-      const url = `${this.baseUrl}/dir/${this.path}/${this.newFolderName}`;
+      const url = `${this.baseUrl}/dir${this.path}${this.newFolderName}`;
 
       try {
         const res = await fetch(url, {

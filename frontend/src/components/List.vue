@@ -8,7 +8,14 @@
     <v-card-text
       v-else-if="isFile"
       class="grow d-flex justify-center align-center"
-    >File: {{ path }}</v-card-text>
+    >
+      <p>File: {{ path }}</p>
+      <br />
+      <v-btn :href="baseUrl+'/file'+path">
+        <v-icon>mdi-download</v-icon>
+        Download
+      </v-btn>
+    </v-card-text>
     <v-card-text v-else-if="dirs.length || files.length" class="grow">
       <v-list subheader v-if="dirs.length">
         <v-subheader>Folders</v-subheader>
@@ -44,11 +51,11 @@
           class="pl-0"
         >
           <v-list-item-avatar class="ma-0">
-            <v-icon>{{ icons[item.extension] || icons['other'] }}</v-icon>
+            <v-icon>{{ icons[extension(item)] || icons['other'] }}</v-icon>
           </v-list-item-avatar>
 
           <v-list-item-content class="py-2">
-            <v-list-item-title v-text="item.basename"></v-list-item-title>
+            <v-list-item-title v-text="item.name"></v-list-item-title>
             <v-list-item-subtitle>{{ formatBytes(item.size) }}</v-list-item-subtitle>
           </v-list-item-content>
 
@@ -182,7 +189,8 @@ export default Vue.extend({
         return;
       }
       this.$emit('loading', true);
-      const url = `${this.baseUrl}/file/${item.path}`;
+      const type = item.is_directory ? 'dir' : 'file';
+      const url = `${this.baseUrl}/${type}${item.path}`;
 
       try {
         const res = await fetch(url, {
@@ -197,6 +205,10 @@ export default Vue.extend({
         alert('An error occured. Check the console');
       }
       this.$emit('loading', false);
+    },
+    extension (item: TreeItem): string {
+      const parts = item.name.split('.');
+      return parts[parts.length - 1];
     },
   },
   watch: {

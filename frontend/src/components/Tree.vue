@@ -19,7 +19,7 @@
           <v-icon
             v-if="item.is_directory"
           >{{ open ? 'mdi-folder-open-outline' : 'mdi-folder-outline' }}</v-icon>
-          <v-icon v-else>{{ icons[item.extension] || icons['other'] }}</v-icon>
+          <v-icon v-else>{{ icons[extension(item)] || icons['other'] }}</v-icon>
         </template>
         <template v-slot:label="{ item }">
           {{item.name}}
@@ -156,6 +156,10 @@ export default Vue.extend({
         }
       }
       return null;
+    },
+    extension (item: TreeItem): string {
+      const parts = item.name.split('.');
+      return parts[parts.length - 1];
     },
   },
   watch: {

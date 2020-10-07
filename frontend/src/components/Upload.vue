@@ -78,7 +78,7 @@
         </v-btn>
       </v-toolbar>
       <v-overlay :value="uploading" :absolute="true" color="white" opacity="0.9">
-        <v-progress-linear v-model="loading" indeterminate height="25" striped rounded reactive />
+        <v-progress-linear :active="loading" indeterminate height="25" striped rounded reactive />
       </v-overlay>
     </v-card>
   </v-overlay>
@@ -176,6 +176,7 @@ export default Vue.extend({
       this.listItems = [];
     },
     async upload () {
+      let remainingStorageSize;
       for (const file of this.files) {
         const formData = new FormData();
         formData.append('file', file, file.name);
@@ -191,13 +192,13 @@ export default Vue.extend({
           if (!response.ok) {
             throw await response.text();
           }
-          const remainingStorageSize = await response.json();
-          this.uploading = false;
-          this.$emit('uploaded', remainingStorageSize);
+          remainingStorageSize = await response.json();
         } catch (error) {
           console.error(error);
           alert('An error occured. Check the console');
         }
+        this.uploading = false;
+        this.$emit('uploaded', remainingStorageSize);
       }
     },
   },
