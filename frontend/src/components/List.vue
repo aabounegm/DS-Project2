@@ -7,11 +7,12 @@
     >Select a folder or a file</v-card-text>
     <v-card-text
       v-else-if="isFile"
-      class="grow d-flex justify-center align-center"
+      class="grow d-flex justify-center flex-column align-center"
     >
       <p>File: {{ path }}</p>
-      <br />
-      <v-btn :href="baseUrl+'/file'+path">
+      <p>Size: {{ formatBytes(items[0].size) }} </p>
+      <p>Number of replicas: {{ items[0].replicas }} </p>
+      <v-btn :href="baseUrl+'/file'+path" target="_blank">
         <v-icon>mdi-download</v-icon>
         Download
       </v-btn>
@@ -182,7 +183,9 @@ export default Vue.extend({
       const confirmed = await dialog.open('Delete',
         `Are you sure<br>you want to delete this ${
           item.is_directory ? 'folder' : 'file'
-        }?<br><em>${item.name}</em>`,
+        }?<br><em>${item.name}</em><br>${
+          item.is_directory ? 'All subfolders and files will be deleted with it' : ''
+        }`,
       );
 
       if (!confirmed) {
@@ -213,7 +216,9 @@ export default Vue.extend({
   },
   watch: {
     async path () {
-      this.items = [];
+      if (this.isDir) {
+        this.items = [];
+      }
       await this.load();
     },
     async refreshPending () {
