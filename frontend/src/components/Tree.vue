@@ -15,16 +15,18 @@
         transition
         class="folders-tree"
       >
-        <template v-slot:prepend="{ item, open }">
-          <v-icon
-            v-if="item.is_directory"
-          >{{ open ? 'mdi-folder-open-outline' : 'mdi-folder-outline' }}</v-icon>
-          <v-icon v-else>{{ icons[extension(item)] || icons['other'] }}</v-icon>
+        <template #prepend="{ item, open }">
+          <v-icon v-if="item.is_directory">
+            {{ open ? 'mdi-folder-open-outline' : 'mdi-folder-outline' }}
+          </v-icon>
+          <v-icon v-else>
+            {{ icons[extension(item)] || icons['other'] }}
+          </v-icon>
         </template>
-        <template v-slot:label="{ item }">
+        <template #label="{ item }">
           {{item.name}}
           <v-tooltip bottom>
-            <template v-slot:activator="{ on }">
+            <template #activator="{ on }">
               <v-btn
                 icon
                 v-if="item.is_directory"
@@ -38,7 +40,7 @@
             <span>Refresh</span>
           </v-tooltip>
           <v-tooltip bottom>
-            <template v-slot:activator="{ on }">
+            <template #activator="{ on }">
               <v-btn icon v-if="item.path === '/'" @click.stop="initialize" v-on="on" class="ml-1">
                 <v-icon class="pa-0 mdi-18px" color="error">mdi-nuke</v-icon>
               </v-btn>
@@ -60,7 +62,7 @@
         class="ml-n3"
       ></v-text-field>
       <v-tooltip top>
-        <template v-slot:activator="{ on }">
+        <template #activator="{ on }">
           <v-btn icon @click="init" v-on="on">
             <v-icon>mdi-collapse-all-outline</v-icon>
           </v-btn>

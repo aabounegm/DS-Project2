@@ -197,9 +197,9 @@ export default Vue.extend({
           console.error(error);
           alert('An error occured. Check the console');
         }
-        this.uploading = false;
-        this.$emit('uploaded', remainingStorageSize);
       }
+      this.uploading = false;
+      this.$emit('uploaded', remainingStorageSize);
     },
   },
   watch: {
