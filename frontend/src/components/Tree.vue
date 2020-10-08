@@ -180,8 +180,11 @@ export default Vue.extend({
     },
     async initialize () {
       try {
-        const res = await fetch(`${this.baseUrl}/initialize`);
+        const res = await fetch(`${this.baseUrl}/initialize`, {
+          method: 'post',
+        });
         const size = await res.json();
+        this.init();
         this.$emit('init', size);
       } catch (error) {
         console.error(error);
