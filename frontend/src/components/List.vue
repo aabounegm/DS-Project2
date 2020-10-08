@@ -7,8 +7,16 @@
     >Select a folder or a file</v-card-text>
     <v-card-text
       v-else-if="isFile"
-      class="grow d-flex justify-center align-center"
-    >File: {{ path }}</v-card-text>
+      class="grow d-flex justify-center flex-column align-center"
+    >
+      <p>File: {{ path }}</p>
+      <p>Size: {{ formatBytes(items[0].size) }} </p>
+      <p>Number of replicas: {{ items[0].replicas }} </p>
+      <v-btn :href="baseUrl+'/file'+path" target="_blank">
+        <v-icon>mdi-download</v-icon>
+        Download
+      </v-btn>
+    </v-card-text>
     <v-card-text v-else-if="dirs.length || files.length" class="grow">
       <v-list subheader v-if="dirs.length">
         <v-subheader>Folders</v-subheader>
@@ -44,11 +52,11 @@
           class="pl-0"
         >
           <v-list-item-avatar class="ma-0">
-            <v-icon>{{ icons[item.extension] || icons['other'] }}</v-icon>
+            <v-icon>{{ icons[extension(item)] || icons['other'] }}</v-icon>
           </v-list-item-avatar>
 
           <v-list-item-content class="py-2">
-            <v-list-item-title v-text="item.basename"></v-list-item-title>
+            <v-list-item-title v-text="item.name"></v-list-item-title>
             <v-list-item-subtitle>{{ formatBytes(item.size) }}</v-list-item-subtitle>
           </v-list-item-content>
 
@@ -175,14 +183,17 @@ export default Vue.extend({
       const confirmed = await dialog.open('Delete',
         `Are you sure<br>you want to delete this ${
           item.is_directory ? 'folder' : 'file'
-        }?<br><em>${item.name}</em>`,
+        }?<br><em>${item.name}</em><br>${
+          item.is_directory ? 'All subfolders and files will be deleted with it' : ''
+        }`,
       );
 
       if (!confirmed) {
         return;
       }
       this.$emit('loading', true);
-      const url = `${this.baseUrl}/file/${item.path}`;
+      const type = item.is_directory ? 'dir' : 'file';
+      const url = `${this.baseUrl}/${type}${item.path}`;
 
       try {
         const res = await fetch(url, {
@@ -198,10 +209,16 @@ export default Vue.extend({
       }
       this.$emit('loading', false);
     },
+    extension (item: TreeItem): string {
+      const parts = item.name.split('.');
+      return parts[parts.length - 1];
+    },
   },
   watch: {
     async path () {
-      this.items = [];
+      if (this.isDir) {
+        this.items = [];
+      }
       await this.load();
     },
     async refreshPending () {

@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mx-auto" :loading="loading > 0">
+  <v-card class="mx-auto" :loading="loading">
     <Toolbar
       :path="path"
       :storages="storages"
@@ -11,7 +11,7 @@
       @folder-created="refreshPending = true"
     />
     <v-row no-gutters>
-      <v-col v-if="$vuetify.breakpoint.smAndUp" sm="auto">
+      <v-col sm="auto">
         <Tree
           :path="path"
           :icons="icons"
@@ -20,9 +20,10 @@
           @path-changed="pathChanged"
           @loading="loading = $event"
           @refreshed="refreshPending = false"
+          @init="remainingStorage = $event"
         />
       </v-col>
-      <v-divider vertical></v-divider>
+      <v-divider vertical />
       <v-col>
         <List
           :path="path"
@@ -154,6 +155,15 @@ export default Vue.extend({
     if (!this.path && this.$vuetify.breakpoint.xsOnly) {
       this.pathChanged('/');
     }
+  },
+  watch: {
+    activeStorage: {
+      immediate: true,
+      async handler (value: Remote) {
+        const res = await fetch(`${value.url}/free_space`);
+        this.remainingStorage = await res.json();
+      },
+    },
   },
 });
 </script>
