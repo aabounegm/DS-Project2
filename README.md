@@ -165,6 +165,26 @@ The REST API of the naming server will be similar to the REST API of the storage
   }
   ```
 
+* GET /free_space
+  Get the amount of free space among all storage servers.
+
+  On success, the server should return 200 and the amount of free space in bytes.
+
+* POST /copy/<path_to_file>
+  Copy the file to the specified location.
+
+  The request should be a JSON object specifying the destination:
+  ```json
+  {
+    "destination": "/path1/path2/new_name"
+  }
+  ```
+
+  On success, the server should return 200 and the amount of free space in bytes.
+  If the destination path contains inexistent directories, they should be automatically created.
+  If the source path points to a directory or is invalid, the server should return 404.
+  If the destination path points to an existing file, the server should return 400.
+
 
 ### Storage server discovery
 

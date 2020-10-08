@@ -1,11 +1,4 @@
-"""Views related to file management.
-
-StaticFile:
-- POST /file
-- GET /file/{file_id}
-- DELETE /file/{file_id}
-"""
-
+import io
 import logging
 import mimetypes
 import time
@@ -176,7 +169,7 @@ class FileAPI(MethodView):
                 {'_id': server, 'free_space': int(response.text)},
             )
 
-        mongo.delete_one(entry)
+        mongo.db.index.delete_one(entry)
 
         return jsonify(get_min_free_space())
 
@@ -319,4 +312,68 @@ def join():
 
 @api.route('/free_space')
 def free_space():
+    """Return the amount of free space among the storage servers."""
+    return jsonify(get_min_free_space())
+
+
+@api.route('/copy/<path:path>', methods=['POST'])
+def copy(path: str):
+    """Copy the file to the specified location."""
+    src_internal_path = validate_path(path)
+    dst_internal_path = validate_path(request.json["destination"])
+
+    src_parent = Path('/')
+    src_entry = None
+    for part in src_internal_path.parts:
+        src_entry = mongo.db.index.find_one({'name': part, 'parent': str(src_parent)})
+        if src_entry is None:
+            abort(404)
+        src_parent /= part
+
+    if src_entry is None or src_entry['is_directory'] or not src_entry['servers']:
+        abort(404)
+
+    *dst_parents, dst_name = dst_internal_path.parts
+    dst_parent = Path('/')
+    dst_entry = None
+    for part in dst_parents:
+        dst_entry = mongo.db.index.find_one({'name': part, 'parent': str(dst_parent)})
+        if dst_entry is None:
+            mongo.db.index.insert_one({'name': part,
+                                       'parent': str(dst_parent),
+                                       'is_directory': True})
+        dst_parent /= part
+
+    dst_entry = mongo.db.index.find_one({'name': dst_name, 'parent': str(dst_parent)})
+    if dst_entry is not None:
+        abort(400, 'A file with this name already exists.')
+
+    server = choose_server(among=src_entry['servers'])
+
+    file = requests.get(f'http://{server}/file/{src_internal_path}')
+    if not file.ok:
+        abort(400, 'Copying failed.')
+
+    ok_servers = []
+    for server in mongo.db.servers.find():
+        response = requests.post(
+            f'http://{server["_id"]}/file/{str(dst_internal_path)}',
+            files={'file': io.BytesIO(file.content)}
+        )
+        if not response.ok:
+            continue
+
+        server['free_space'] = int(response.text)
+        mongo.db.servers.replace_one({'_id': server['_id']}, server)
+        ok_servers.append(server['_id'])
+
+    mongo.db.index.insert_one({
+        'name': dst_name,
+        'parent': str(dst_parent),
+        'is_directory': False,
+        'size': len(file.content),
+        'last_modified': int(time.time()),
+        'servers': ok_servers,
+    })
+
     return jsonify(get_min_free_space())
