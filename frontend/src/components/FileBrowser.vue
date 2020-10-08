@@ -34,6 +34,7 @@
           @loading="loading = $event"
           @refreshed="refreshPending = false"
           @file-deleted="refreshPending = true"
+          @update:size="remainingStorage = $event"
         />
       </v-col>
     </v-row>

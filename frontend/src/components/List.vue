@@ -58,12 +58,32 @@
           </v-list-item-content>
 
           <v-list-item-action>
-            <v-btn icon @click.stop="deleteItem(item)">
-              <v-icon color="grey lighten-1">mdi-delete-outline</v-icon>
-            </v-btn>
-            <v-btn icon v-if="false">
-              <v-icon color="grey lighten-1">mdi-information</v-icon>
-            </v-btn>
+            <span>
+              <v-tooltip bottom>
+                <template #activator="{ on }">
+                  <v-btn class="mr-1" icon @click.stop="move(item)" v-on="on">
+                    <v-icon>mdi-file-move</v-icon>
+                  </v-btn>
+                </template>
+                <span>Move file</span>
+              </v-tooltip>
+              <v-tooltip bottom>
+                <template #activator="{ on }">
+                  <v-btn class="mr-1" icon @click.stop="copy(item)" v-on="on">
+                    <v-icon>mdi-content-copy</v-icon>
+                  </v-btn>
+                </template>
+                <span>Copy file</span>
+              </v-tooltip>
+              <v-tooltip bottom>
+                <template #activator="{ on }">
+                  <v-btn icon @click.stop="deleteItem(item)" v-on="on">
+                    <v-icon color="error">mdi-delete-outline</v-icon>
+                  </v-btn>
+                </template>
+                <span>Delete file</span>
+              </v-tooltip>
+            </span>
           </v-list-item-action>
         </v-list-item>
       </v-list>
@@ -200,6 +220,10 @@ export default Vue.extend({
         if (!res.ok) {
           throw await res.text();
         }
+        if (!item.is_directory) {
+          const storageSize = await res.json();
+          this.$emit('update:size', storageSize);
+        }
         this.$emit('file-deleted');
       } catch (error) {
         console.error(error);
@@ -210,6 +234,64 @@ export default Vue.extend({
     extension (item: TreeItem): string {
       const parts = item.name.split('.');
       return parts[parts.length - 1];
+    },
+    async copy (item: TreeItem) {
+      const targetPath = prompt('Enter the desitination path for copying (including file name)', item.path);
+      if (targetPath == null) {
+        return;
+      }
+      try {
+        const res = await fetch(`${this.baseUrl}/copy${item.path}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            destination: targetPath,
+          }),
+        });
+        if (!res.ok) {
+          throw await res.text();
+        }
+        const remainingSize = await res.json();
+        this.$emit('update:size', remainingSize);
+      } catch (error) {
+        console.error(error);
+        alert('An error occured');
+      }
+    },
+    async move (item: TreeItem) {
+      const targetPath = prompt('Enter the desitination path for moving (including file name)', item.path);
+      if (targetPath == null) {
+        return;
+      }
+      try {
+        const res = await fetch(`${this.baseUrl}/copy${item.path}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            destination: targetPath,
+          }),
+        });
+        if (!res.ok) {
+          throw await res.text();
+        }
+        const res2 = await fetch(`${this.baseUrl}/file${item.path}`, {
+          method: 'delete',
+        });
+        if (!res2.ok) {
+          throw await res.text();
+        }
+        await this.load();
+        const remainingSize = await res2.json();
+        this.$emit('file-deleted');
+        this.$emit('update:size', remainingSize);
+      } catch (error) {
+        console.error(error);
+        alert('An error occured');
+      }
     },
   },
   watch: {
