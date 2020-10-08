@@ -69,10 +69,11 @@ app.add_url_rule('/file/',
 
 #==============================================Initialize folder=========================
 
-@app.route('/initialize/<path:pth>', methods=['GET'])
-def initialize_folder(pth) :
+@app.route('/initialize', methods=['POST'])
+def initialize_folder() :
     shutil.rmtree(storage_root)
-    memory = shutil.disk_usage(folder)
+    storage_root.mkdir()
+    memory = shutil.disk_usage(storage_root)
     return str(memory[2])
 
 

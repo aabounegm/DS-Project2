@@ -130,7 +130,6 @@ The REST API of the naming server will be similar to the REST API of the storage
   Delete a directory on the naming server.  
 
   On success, the server should respond with 204.  
-  If the directory is not empty, the server should respond with 400 – only empty directories can be removed with this request.  
   If the directory doesn't exist, the server should respond with 204 as if the operation was successful.
 
 * `POST /initialize`
@@ -165,12 +164,12 @@ The REST API of the naming server will be similar to the REST API of the storage
   }
   ```
 
-* GET /free_space
+* `GET /free_space`  
   Get the amount of free space among all storage servers.
 
   On success, the server should return 200 and the amount of free space in bytes.
 
-* POST /copy/<path_to_file>
+* `POST /copy/<path_to_file>`  
   Copy the file to the specified location.
 
   The request should be a JSON object specifying the destination:

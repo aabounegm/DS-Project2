@@ -4,6 +4,7 @@ or fed to servers like gunicorn using `run:app`."""
 
 import os
 import shutil
+import sys
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -22,12 +23,19 @@ if __name__ == '__main__':
         for child in storage_root.rglob('*')
     }
 
-    resp = requests.post(f'http://{NAMING_SERVER}/join',
-                         json={'files': file_listing,
-                               'free_space': shutil.disk_usage(storage_root)[2],
-                               'port': PORT})
-    if not resp.ok:
+    ok = True
+    try:
+        resp = requests.post(f'http://{NAMING_SERVER}/join',
+                             json={'files': file_listing,
+                                   'free_space': shutil.disk_usage(storage_root)[2],
+                                   'port': PORT})
+    except requests.exceptions.ConnectionError:
+        ok = False
+
+    ok = ok and resp.ok
+    if not ok:
         print('Failed to join the DFS')
+        sys.exit(1)
     else:
         missing_files = resp.json()
         for file in missing_files:

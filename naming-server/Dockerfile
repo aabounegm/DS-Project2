@@ -19,10 +19,6 @@ RUN python3.8 -m pip install pipenv && pipenv install --system
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# copy the project code
-COPY src /app/src
-COPY run.py /app/
-
 COPY docker-entrypoint.sh /app
 
 # expose the port
@@ -33,3 +29,7 @@ ENV MONGO_URI mongodb://localhost:27017/db
 
 # define the default command to run when starting the container
 ENTRYPOINT ./docker-entrypoint.sh
+
+# copy the project code
+COPY run.py /app/
+COPY src /app/src

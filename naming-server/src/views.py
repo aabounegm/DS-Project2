@@ -241,7 +241,7 @@ class DirectoryAPI(MethodView):
         return NO_PAYLOAD
 
     def delete(self, path: str):
-        """Delete an empty directory."""
+        """Delete a directory."""
         internal_path = validate_path(path)
 
         parent = Path('/')
@@ -255,9 +255,22 @@ class DirectoryAPI(MethodView):
         if not entry['is_directory']:
             abort(400, 'The path points to a file.')
 
-        children = mongo.db.index.find({'parent': str(parent/entry['name'])})
-        if tuple(children):
-            abort(400, 'Only empty directories can be removed.')
+        alright = str(parent).replace("/", "\\/")
+        children = mongo.db.index.find({
+            'parent': {'$regex': f'^{alright}.*'}
+        })
+        for child in children:
+            if not child['is_directory']:
+                for server in child['servers']:
+                    response = requests.delete(
+                        f'http://{server}/file{child["parent"]}/{child["name"]}'
+                    )
+                    mongo.db.servers.replace_one(
+                        {'_id': server},
+                        {'_id': server, 'free_space': int(response.text)},
+                    )
+
+            mongo.db.index.delete_one(child)
 
         mongo.db.index.delete_one(entry)
 
@@ -320,7 +333,7 @@ def free_space():
 def copy(path: str):
     """Copy the file to the specified location."""
     src_internal_path = validate_path(path)
-    dst_internal_path = validate_path(request.json["destination"])
+    dst_internal_path = validate_path(request.json["destination"].lstrip('/'))
 
     src_parent = Path('/')
     src_entry = None
