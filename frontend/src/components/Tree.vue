@@ -58,9 +58,10 @@
         hide-details
         label="Filter"
         v-model="filter"
+        autocomplete="off"
         prepend-inner-icon="mdi-filter-outline"
         class="ml-n3"
-      ></v-text-field>
+      />
       <v-tooltip top>
         <template #activator="{ on }">
           <v-btn icon @click="init" v-on="on">

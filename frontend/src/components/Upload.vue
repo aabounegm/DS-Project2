@@ -30,7 +30,6 @@
                 v-else
                 v-text="icons[file.extension] || 'mdi-file'"
                 class="mdi-36px"
-                color="grey lighten-1"
               />
             </v-list-item-avatar>
             <v-list-item-content>
@@ -39,7 +38,7 @@
             </v-list-item-content>
             <v-list-item-action>
               <v-btn icon @click="remove(index)">
-                <v-icon color="grey lighten-1">mdi-close</v-icon>
+                <v-icon>mdi-close</v-icon>
               </v-btn>
             </v-list-item-action>
           </v-list-item>

@@ -10,8 +10,8 @@
       class="grow d-flex justify-center flex-column align-center"
     >
       <p>File: {{ path }}</p>
-      <p>Size: {{ formatBytes(items[0].size) }} </p>
-      <p>Number of replicas: {{ items[0].replicas }} </p>
+      <p>Size: {{ formatBytes(items[0].size) }}</p>
+      <p>Number of replicas: {{ items[0].replicas }}</p>
       <v-btn :href="baseUrl+'/file'+path" target="_blank">
         <v-icon>mdi-download</v-icon>
         Download
@@ -34,10 +34,7 @@
           </v-list-item-content>
           <v-list-item-action>
             <v-btn icon @click.stop="deleteItem(item)">
-              <v-icon color="grey lighten-1">mdi-delete-outline</v-icon>
-            </v-btn>
-            <v-btn icon v-if="false">
-              <v-icon color="grey lighten-1">mdi-information</v-icon>
+              <v-icon color="error">mdi-delete-outline</v-icon>
             </v-btn>
           </v-list-item-action>
         </v-list-item>
@@ -87,6 +84,7 @@
     </v-toolbar>
     <v-toolbar v-if="path && isDir" dense flat class="shrink">
       <v-text-field
+        autocomplete="off"
         solo
         flat
         hide-details
