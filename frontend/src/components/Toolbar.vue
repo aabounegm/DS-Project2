@@ -47,42 +47,52 @@
       <span v-if="pathSegments.length === 1">Up to "root"</span>
       <span v-else>Up to "{{pathSegments[pathSegments.length - 2].name}}"</span>
     </v-tooltip>
-    <v-menu
-      v-model="newFolderPopper"
-      :close-on-content-click="false"
-      :nudge-width="200"
-      offset-y
-    >
-      <template #activator="{ on, attrs }">
-        <v-btn v-show="!!path" icon v-on="on" v-bind="attrs" title="Create Folder">
-          <v-icon>mdi-folder-plus-outline</v-icon>
-        </v-btn>
-      </template>
-      <v-card>
-        <v-card-text>
-          <v-text-field label="Name" v-model="newFolderName" hide-details />
-        </v-card-text>
-        <v-card-actions>
-          <div class="flex-grow-1"></div>
-          <v-btn @click="newFolderPopper = false" depressed>Cancel</v-btn>
-          <v-btn
-            color="success"
-            :disabled="!newFolderName"
-            depressed
-            @click="mkdir"
-          >Create Folder</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-menu>
-    <v-tooltip bottom v-if="path">
-      <template #activator="{ on }">
-        <v-btn v-on="on" icon @click="$refs.inputUpload.click()">
-          <v-icon>mdi-plus-circle</v-icon>
-          <input v-show="false" ref="inputUpload" type="file" multiple @change="addFiles" />
-        </v-btn>
-      </template>
-      <span>Upload files</span>
-    </v-tooltip>
+    <template v-if="path[path.length-1] === '/'">
+      <v-menu
+        v-model="newFolderPopper"
+        :close-on-content-click="false"
+        :nudge-width="200"
+        offset-y
+      >
+        <template #activator="{ on, attrs }">
+          <v-btn v-show="!!path" icon v-on="on" v-bind="attrs" title="Create Folder">
+            <v-icon>mdi-folder-plus-outline</v-icon>
+          </v-btn>
+        </template>
+        <v-card>
+          <v-card-text>
+            <v-text-field label="Name" v-model="newFolderName" hide-details autocomplete="off" />
+          </v-card-text>
+          <v-card-actions>
+            <div class="flex-grow-1"></div>
+            <v-btn @click="newFolderPopper = false" depressed>Cancel</v-btn>
+            <v-btn
+              color="success"
+              :disabled="!newFolderName"
+              depressed
+              @click="mkdir"
+            >Create Folder</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-menu>
+      <v-tooltip bottom v-if="path">
+        <template #activator="{ on }">
+          <v-btn v-on="on" icon @click="$refs.inputUpload.click()">
+            <v-icon>mdi-plus-circle</v-icon>
+            <input v-show="false" ref="inputUpload" type="file" multiple @change="addFiles" />
+          </v-btn>
+        </template>
+        <span>Upload files</span>
+      </v-tooltip>
+      <v-tooltip bottom v-if="path">
+        <template #activator="{ on }">
+          <v-btn v-on="on" icon @click="createEmptyFile">
+            <v-icon>mdi-file-plus-outline</v-icon>
+          </v-btn>
+        </template>
+        <span>Create empty file</span>
+      </v-tooltip>
+    </template>
   </v-toolbar>
 </template>
 
@@ -175,7 +185,38 @@ export default Vue.extend({
         if (!res.ok) {
           throw await res.text();
         }
-        this.$emit('folder-created', this.newFolderName);
+        this.$emit('folder-created');
+
+        this.newFolderPopper = false;
+        this.newFolderName = '';
+      } catch (error) {
+        console.error(error);
+        alert('An error occured. Check the console');
+      }
+
+      this.$emit('loading', false);
+    },
+    async createEmptyFile () {
+      if (this.path[this.path.length - 1] !== '/') {
+        return;
+      }
+      const newFileName = prompt('Give your file a name');
+      if (newFileName == null) {
+        return;
+      }
+      this.$emit('loading', true);
+      const url = `${this.baseUrl}/file${this.path}${newFileName}`;
+      try {
+        const formData = new FormData();
+        formData.append('file', new File([], newFileName), newFileName);
+        const res = await fetch(url, {
+          method: 'post',
+          body: formData,
+        });
+        if (!res.ok) {
+          throw await res.text();
+        }
+        this.$emit('folder-created');
 
         this.newFolderPopper = false;
         this.newFolderName = '';
