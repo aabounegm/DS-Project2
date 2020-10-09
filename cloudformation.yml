@@ -1,0 +1,310 @@
+Description: DS Project 2
+Resources:
+  VPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      InstanceTenancy: default
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: Project 2
+    Metadata:
+      AWS::CloudFormation::Designer:
+        id: 8147282a-4d2a-45ce-9165-a4a84215f725
+  PrivateSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: us-east-1a
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Project 2 - Private Subnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: af47c520-60ba-4b33-8256-06afdeaa305b
+  PublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: us-east-1a
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Project 2 - Public subnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 2eb46013-7193-4d6d-a12d-9dec334a6d11
+  InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Project 2 Internet Gateway
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 58216c00-7204-4bae-bb01-82fcc60ef997
+  DHCPOptions:
+    Type: 'AWS::EC2::DHCPOptions'
+    Properties:
+      DomainName: ec2.internal
+      DomainNameServers:
+        - AmazonProvidedDNS
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c8455cad-3df6-4472-906f-6de4ff498515
+  NetworkACL:
+    Type: 'AWS::EC2::NetworkAcl'
+    Properties:
+      VpcId: !Ref VPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e804af46-beab-417a-bcef-44e9b99da281
+  RoutingTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Project 2 - route table
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c3f9c9c6-3ecf-43e3-93b4-4f539ef0a487
+  StorageServer1:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      DisableApiTermination: false
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: ami-0817d428a6fb68645
+      InstanceType: t2.micro
+      KeyName: Innopolis
+      Monitoring: false
+      Tags:
+        - Key: Name
+          Value: Storage 1
+      NetworkInterfaces:
+        - DeleteOnTermination: true
+          Description: Primary network interface
+          DeviceIndex: 0
+          SubnetId: !Ref PrivateSubnet
+          PrivateIpAddresses:
+            - PrivateIpAddress: 10.0.0.10
+              Primary: true
+          GroupSet:
+            - !Ref DefaultSecurityGroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b8d7c779-f194-46f0-9da5-5f495c70f1c9
+  StorageServer2:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      DisableApiTermination: false
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: ami-0817d428a6fb68645
+      InstanceType: t2.micro
+      KeyName: Innopolis
+      Monitoring: false
+      Tags:
+        - Key: Name
+          Value: Storage 2
+      NetworkInterfaces:
+        - DeleteOnTermination: true
+          Description: Primary network interface
+          DeviceIndex: '0'
+          SubnetId: !Ref PrivateSubnet
+          PrivateIpAddresses:
+            - PrivateIpAddress: 10.0.0.11
+              Primary: true
+          GroupSet:
+            - !Ref DefaultSecurityGroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 375a73e0-b24f-4f7c-81d1-b040a80cba58
+  NamingServer:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      DisableApiTermination: false
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: ami-0817d428a6fb68645
+      InstanceType: t2.micro
+      KeyName: Innopolis
+      Monitoring: false
+      Tags:
+        - Key: Name
+          Value: Naming
+      NetworkInterfaces:
+        - DeleteOnTermination: true
+          Description: Primary network interface
+          DeviceIndex: 0
+          SubnetId: !Ref PublicSubnet
+          PrivateIpAddresses:
+            - PrivateIpAddress: 10.0.1.10
+              Primary: true
+          GroupSet:
+            - !Ref HTTPSecurityGroup
+          AssociatePublicIpAddress: true
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 79d951fe-4b7c-4679-86d5-7ba5995cf057
+  HTTPSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Allows HTTP connections from outside
+      VpcId: !Ref VPC
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: ffa4fca5-3895-4b56-a5ea-1a43c5dc4f17
+  DefaultSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: default VPC security group
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Project 2
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: eae5d880-156f-456c-b2a2-e75e16d8b4cf
+  ACL1:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: true
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+      NetworkAclId: !Ref NetworkACL
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b745a8a6-55bd-4ccb-a9e1-9c8692fb5057
+  ACL2:
+    Type: 'AWS::EC2::NetworkAclEntry'
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+      NetworkAclId: !Ref NetworkACL
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 113ce68e-09b0-415e-bc78-f7e3c915355e
+  SubnetACL1:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      NetworkAclId: !Ref NetworkACL
+      SubnetId: !Ref PrivateSubnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c00398c1-53d4-4c77-8b7e-3894cd82ccad
+  SubnetACL2:
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+    Properties:
+      NetworkAclId: !Ref NetworkACL
+      SubnetId: !Ref PublicSubnet
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 0a32c6f5-1a1a-4933-90df-e61c6d2ecba4
+  GatewayAttachement:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b0ec5163-4be9-4f83-abe6-e00c5e038366
+  Route1:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref RoutingTable
+      GatewayId: !Ref InternetGateway
+    DependsOn: GatewayAttachement
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 84421f77-cd81-4ff0-8d15-e31f168ce9f9
+  DHCPOptionsAssociation:
+    Type: 'AWS::EC2::VPCDHCPOptionsAssociation'
+    Properties:
+      VpcId: !Ref VPC
+      DhcpOptionsId: !Ref DHCPOptions
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: e8b0a55e-ad51-42d9-ae68-c9f71649b6de
+  SGIngress1:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref HTTPSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0
+  SGIngress2:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref HTTPSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref DefaultSecurityGroup
+      SourceSecurityGroupOwnerId: '793351753542'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: c5cff7f6-f289-4fe4-8eea-a5a057d7e259
+  SGIngress3:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref HTTPSecurityGroup
+      IpProtocol: '-1'
+      CidrIp: 10.0.0.0/24
+  SGIngress4:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref HTTPSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 0.0.0.0/0
+  SGIngress5:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref HTTPSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
+  SGIngress6:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref DefaultSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref DefaultSecurityGroup
+      SourceSecurityGroupOwnerId: '793351753542'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b36d1852-7398-466d-ab4f-5e08d68082de
+  SGIngress7:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref DefaultSecurityGroup
+      IpProtocol: '-1'
+      CidrIp: 10.0.0.0/24
+  SGIngress8:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref DefaultSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 0.0.0.0/0
+  SGEgress1:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    Properties:
+      GroupId: !Ref HTTPSecurityGroup
+      IpProtocol: '-1'
+      CidrIp: 0.0.0.0/0
+  SGEgress2:
+    Type: 'AWS::EC2::SecurityGroupEgress'
+    Properties:
+      GroupId: !Ref DefaultSecurityGroup
+      IpProtocol: '-1'
+      CidrIp: 0.0.0.0/0
