@@ -10,8 +10,8 @@
       class="grow d-flex justify-center flex-column align-center"
     >
       <p>File: {{ path }}</p>
-      <p>Size: {{ formatBytes(items[0].size) }}</p>
-      <p>Number of replicas: {{ items[0].replicas }}</p>
+      <p>Size: {{ formatBytes(items.find(item => item.path == path).size) }}</p>
+      <p>Number of replicas: {{ items.find(item => item.path == path).replicas }}</p>
       <v-btn :href="baseUrl+'/file'+path" target="_blank">
         <v-icon>mdi-download</v-icon>
         Download

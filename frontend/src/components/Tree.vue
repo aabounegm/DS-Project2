@@ -179,6 +179,9 @@ export default Vue.extend({
       return parts[parts.length - 1];
     },
     async initialize () {
+      if (!confirm('Are you sure you want to erase everything???!!?!?!?!')) {
+        return;
+      }
       try {
         const res = await fetch(`${this.baseUrl}/initialize`, {
           method: 'post',
