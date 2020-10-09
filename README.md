@@ -8,6 +8,63 @@ The system contains the following components:
 * Naming server
 * Client
 
+## How to run
+
+**Naming server**:
+
+```
+docker run -e PORT=7507 -p 7507:7507 illright/naming-server
+```
+
+(replace `7507` with a port of your choice to have the naming server listen on a different port)
+
+
+
+**Storage server**:
+
+```
+docker run -e NAMING_SERVER=10.0.0.6:7507 -e PORT=7508 -p 7508:7508 illright/storage-server
+```
+
+(replace `10.0.0.6:7507` with the IP address and port number of the naming server and `7508` with a port of your choice to have the storage server listen on a different port)
+
+
+
+**Client**:
+
+```
+docker run -p 80:80 aabounegm/ds-project2-client
+```
+
+The client will then be available in your browser at http://localhost.
+
+## How to use
+
+The client is a web client for managing the DFS. It contains most of the features that you'd expect from a file browser so that even non-tech-savvy users can freely use the system.
+
+The storage servers and the naming server communicate through HTTP using a clearly defined REST API, which makes it possible to write other clients for the system if needed.
+
+## Links
+
+* GitHub source: https://github.com/aabounegm/DS-Project2
+* Storage server Docker image: https://hub.docker.com/r/illright/storage-server
+* Naming server Docker image: https://hub.docker.com/r/illright/naming-server
+* Client Docker image: https://hub.docker.com/r/aabounegm/ds-project2-client
+
+# Architecture
+
+![diagram](diagram.png)
+
+The system uses the _recursive_ approach to the communication between the three components of the system. The diagram above depicts a file fetching operation:
+
+1. The client sends a request to the naming server for a file
+2. The naming server locates the file and fetches it from some storage server
+3. The storage server responds to the naming server's request by sending the file contents
+4. The naming server finally sends the file contents to the client, completing the client's request
+
+Even though the diagram depicts three storage servers, theoretically there could be as many as required (as long as there is at least one).
+
+
 
 ## Storage server
 
