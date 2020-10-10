@@ -34,7 +34,7 @@
           </v-list>
           <v-divider />
           <div class="px-4" style="display: grid;">
-            <v-text-field v-model="name" label="Name" hint="Name of remote server" />
+            <v-text-field autocomplete="off" v-model="name" label="Name" hint="Name of remote server" />
             <v-text-field v-model="url" label="Address" hint="http://10.0.0.1" />
             <v-btn fab class="ml-auto" color="pink" :dark="!!name && !!url" @click="add" :disabled="!name || !url">
               <v-icon>mdi-plus</v-icon>
@@ -64,6 +64,11 @@ export default Vue.extend({
   data () {
     return {
       remotes: [
+        {
+          name: 'AWS',
+          url: 'http://107.23.166.30',
+          icon: 'mdi-cloud',
+        },
         {
           name: 'Local',
           url: 'http://localhost:7507',
