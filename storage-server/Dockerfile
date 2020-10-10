@@ -13,10 +13,6 @@ RUN pip install pipenv && pipenv install --system
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# copy the project code
-COPY src /app/src
-COPY run.py /app/
-
 # expose the port
 EXPOSE 7508
 
@@ -24,3 +20,7 @@ ENV FLASK_ENV production
 
 # define the default command to run when starting the container
 ENTRYPOINT ["python3.8", "run.py"]
+
+# copy the project code
+COPY run.py /app/
+COPY src /app/src

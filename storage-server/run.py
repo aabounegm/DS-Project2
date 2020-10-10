@@ -39,7 +39,8 @@ if __name__ == '__main__':
     else:
         missing_files = resp.json()
         for file in missing_files:
-            resp = requests.get(f'http://{missing_files[file]}{file}')
+            resp = requests.get(f'http://{missing_files[file]}/file{file}')
             if resp.ok:
+                (storage_root/file[1:]).parent.mkdir(parents=True, exist_ok=True)
                 (storage_root/file[1:]).write_bytes(resp.content)
     app.run(host='0.0.0.0', port=PORT, debug=False)

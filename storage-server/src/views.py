@@ -80,8 +80,8 @@ def initialize_folder() :
 @app.route('/synchronize', methods=['POST'])
 def synchronize():
     for file in request.json:
-        resp = requests.get(f'http://{request.json[file]}{file}')
+        resp = requests.get(f'http://{request.json[file]}/file{file}')
         if resp.ok:
             (storage_root/file[1:]).write_bytes(resp.content)
-    memory = shutil.disk_usage(folder)
+    memory = shutil.disk_usage(storage_root)
     return str(memory[2])

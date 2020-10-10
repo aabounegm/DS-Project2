@@ -306,19 +306,18 @@ def join():
         'free_space': request.json['free_space']
     })
 
-    this_missing = {}
-    for file in request.json['files']:
-        path = validate_path(file)
-        entry = mongo.db.index.find_one({
-            'name': path.name,
-            'parent': str(path.parent),
-        })
+    file_index = mongo.db.index.find({})
 
-        if entry is None:
+    this_missing = {}
+    for file in file_index:
+        if file['is_directory']:
             continue
 
-        if entry['last_modified'] != request.json['files'][file]:
-            this_missing[file] = choose_server(among=entry['servers'])
+        full_name = f"{file['parent'].rstrip('/')}/{file['name']}"
+        if file['last_modified'] != request.json['files'].get(full_name, None):
+            this_missing[full_name] = choose_server(among=file['servers'])
+            file['servers'].append(f'{request.remote_addr}:{request.json["port"]}')
+            mongo.db.index.replace_one({'_id': file['_id']}, file)
 
     return jsonify(this_missing)
 
